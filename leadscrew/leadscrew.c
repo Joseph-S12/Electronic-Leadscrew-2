@@ -61,7 +61,7 @@ void doLeadscrewPulse(){
 
 	gpio_put(LEADSCREW_DIR_PIN,leadscrew_direction_set);
 	printf("%ld %ld\n",step, currentSpindleCounter);
-	doLeadscrewSteps((uint16_t) abs(step));
+	if (abs(step)<40) doLeadscrewSteps((uint16_t) abs(step));
 }
 
 void doLeadscrewSteps(uint16_t numSteps) {

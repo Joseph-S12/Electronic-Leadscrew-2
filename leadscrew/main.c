@@ -48,14 +48,14 @@ void main() {
 		else if (gpio_get(DIVIDING_PIN)){
 			updatePitch(1000);
 			updateRPM(noDivisions);//This is Number of divisions
-			// if (gpio_get(FORWARD_PIN)){
-			// 	divisionCount++;
-			// 	indexSpindle(noDivisions, divisionCount);
-			// 	sleep_ms(750);
-			// }
+			if (gpio_get(FORWARD_PIN)){
+				divisionCount++;
+				indexSpindle(noDivisions, divisionCount);
+				sleep_ms(750);
+			}
 		}
 		else{
-			//resetCounters();
+			resetCounters();
 			updatePitch(0000);
 			updateRPM(0000);
 		}

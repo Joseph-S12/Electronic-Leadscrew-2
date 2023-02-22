@@ -29,7 +29,7 @@ void moveSpindle(int rpm){
 		previousTime=currentTime;
 		doSpindleSteps((uint16_t)changeSteps);
 	}
-	else if (changeSteps < 20) spindleCounter+=changeSteps;
+	else if (changeSteps >= 20) spindleCounter+=changeSteps;
 }
 
 void indexSpindle(uint16_t noDivisions, uint16_t divisionCount){
