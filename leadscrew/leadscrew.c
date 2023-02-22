@@ -44,7 +44,7 @@ void doLeadscrewPulse(){
 	uint32_t step;
 	uint32_t currentSpindleCounter=spindleCounter;
 	//Do calculations for the current desired step
-	step =	((LEADSCREW_NUM_STEPS * LEADSCREW_NUM_MICROSTEPS  * pitch_1000 * currentSpindleCounter) / 
+	step =(uint32_t) ((LEADSCREW_NUM_STEPS * LEADSCREW_NUM_MICROSTEPS  * pitch_1000 * (uint64_t) currentSpindleCounter) / 
 			(SPINDLE_NUM_STEPS * SPINDLE_NUM_MICROSTEPS * LEADSCREW_PITCH_1000)) ;
   
 	//Calculates how many steps need to be performed
@@ -60,7 +60,7 @@ void doLeadscrewPulse(){
 	}
 
 	gpio_put(LEADSCREW_DIR_PIN,leadscrew_direction_set);
-	printf("%ld\n",step);
+	printf("%ld %ld\n",step, currentSpindleCounter);
 	doLeadscrewSteps((uint16_t) abs(step));
 }
 

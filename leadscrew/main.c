@@ -17,14 +17,15 @@
 //It is interrupted by the quadrature encoder pulses.
 void main() {
 	int state=0;
-	int rpm=250;
+	int rpm=200;
 	int noDivisions=20;
+	int divisionCount=0;
 	//Initialise IO
 	stdio_init_all();
 	initGPIO0();
 	initialiseDisplay();
 	initialiseLeadscrew();
-	//multicore_launch_core1(&core_1_main);
+	multicore_launch_core1(&core_1_main);
 	
 	while (true){ 
 		
@@ -38,17 +39,23 @@ void main() {
 				//Move
 				state+=32;
 				setSpindleDir(gpio_get(REVERSE_PIN));
-				// moveSpindle(rpm);
-				doSpindleSteps(1);
-				sleep_us(300);
+				moveSpindle(rpm);
+				// doSpindleSteps(1);
+				// sleep_us(300);
 				doLeadscrewPulse();
 			}
 		}
 		else if (gpio_get(DIVIDING_PIN)){
 			updatePitch(1000);
 			updateRPM(noDivisions);//This is Number of divisions
+			// if (gpio_get(FORWARD_PIN)){
+			// 	divisionCount++;
+			// 	indexSpindle(noDivisions, divisionCount);
+			// 	sleep_ms(750);
+			// }
 		}
 		else{
+			//resetCounters();
 			updatePitch(0000);
 			updateRPM(0000);
 		}
