@@ -44,6 +44,29 @@ void main() {
 				// sleep_us(300);
 				doLeadscrewPulse();
 			}
+			else {
+				resetCounters();
+				if (gpio_get(METRIC_PIN) || gpio_get(IMPERIAL_PIN)){
+					if (gpio_get(INCREASE_PIN)){
+						if (pitch_1000<2500) pitch_1000+=50;
+						while (gpio_get(INCREASE_PIN)) sleep_ms(5);
+					}
+					if (gpio_get(DECREASE_PIN)){
+						if (pitch_1000>50) rpm-=50;
+						while (gpio_get(DECREASE_PIN)) sleep_ms(5);
+					}
+				}
+				else{
+					if (gpio_get(INCREASE_PIN)){
+						if (rpm<1000) rpm+=50;
+						while (gpio_get(INCREASE_PIN)) sleep_ms(5);
+					}
+					if (gpio_get(DECREASE_PIN)){
+						if (rpm>50) rpm-=50;
+						while (gpio_get(DECREASE_PIN)) sleep_ms(5);
+					}
+				}
+			}
 		}
 		else if (gpio_get(DIVIDING_PIN)){
 			updatePitch(1000);
@@ -51,7 +74,7 @@ void main() {
 			if (gpio_get(FORWARD_PIN)){
 				divisionCount++;
 				indexSpindle(noDivisions, divisionCount);
-				sleep_ms(750);
+				sleep_ms(10);
 			}
 		}
 		else{

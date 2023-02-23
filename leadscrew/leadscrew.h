@@ -19,3 +19,5 @@ extern void doLeadscrewPulse();
 extern void doLeadscrewSteps(uint16_t);
 extern uint16_t getPitch();
 extern void setPitch(uint16_t);
+
+extern volatile uint16_t pitch_1000;
