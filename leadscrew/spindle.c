@@ -36,13 +36,15 @@ void indexSpindle(uint16_t noDivisions, uint16_t divisionCount){
 	uint32_t steps = ((uint32_t) noDivisions * divisionCount) / (SPINDLE_NUM_STEPS * SPINDLE_NUM_MICROSTEPS);
 	
 	steps = steps - spindleCounter;
-	printf("steps: %ld\n",steps);
-	for (size_t i = 0; i < steps; i++) {
-		gpio_put(SPINDLE_PUL_PIN, 1);
-		sleep_us(100);
-		gpio_put(SPINDLE_PUL_PIN, 0);
-		sleep_us(100);
-		spindleCounter++;
+	if (steps > 0 && steps < 20){
+		printf("steps: %ld\n",steps);
+		for (size_t i = 0; i < steps; i++) {
+			gpio_put(SPINDLE_PUL_PIN, 1);
+			sleep_us(100);
+			gpio_put(SPINDLE_PUL_PIN, 0);
+			sleep_us(100);
+			spindleCounter++;
+		}
 	}
 }
 

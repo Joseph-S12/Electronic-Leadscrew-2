@@ -52,16 +52,17 @@ void doLeadscrewPulse(){
 	step = step - leadscrewCounter;
 	leadscrewCounter+=step;
 	// printf("%ld, %ld\n", step, leadscrewCounter);
-	if ((step>0 && reverse==false) || (step<0 && reverse==true)){
+	
+	if ((gpio_get(REVERSE_PIN) && gpio_get(LEFT_HAND_PIN)) || (gpio_get(FORWARD_PIN) && gpio_get(RIGHT_HAND_PIN))){
 		leadscrew_direction_set=0;
 	}
-	else{
+	else {
 		leadscrew_direction_set=1;
 	}
 
 	gpio_put(LEADSCREW_DIR_PIN,leadscrew_direction_set);
 	printf("%ld %ld\n",step, currentSpindleCounter);
-	if (abs(step)<40) doLeadscrewSteps((uint16_t) abs(step));
+	if (abs(step)>0 && abs(step)<40) doLeadscrewSteps((uint16_t) abs(step));
 }
 
 void doLeadscrewSteps(uint16_t numSteps) {
