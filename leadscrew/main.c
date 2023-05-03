@@ -34,7 +34,7 @@ void main() {
 		if (gpio_get(LEADSCREW_PIN)){
 			updatePitch(getPitch());
 			updateRPM(rpm);//Will need speed control here eventually
-			
+
 			if (gpio_get(FORWARD_PIN) || gpio_get(REVERSE_PIN)){
 				//Move
 				state+=32;
@@ -75,6 +75,13 @@ void main() {
 				divisionCount++;
 				indexSpindle(noDivisions, divisionCount);
 				sleep_ms(10);
+				while (gpio_get(FORWARD_PIN)) sleep_ms(5);
+			}
+			else if (gpio_get(REVERSE_PIN)){
+				divisionCount--;
+				indexSpindle(noDivisions, divisionCount);
+				sleep_ms(10);
+				while (gpio_get(REVERSE_PIN)) sleep_ms(5);
 			}
 		}
 		else{
