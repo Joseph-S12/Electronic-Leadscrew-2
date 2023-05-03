@@ -11,3 +11,4 @@ The steppers can be driven by most stepper drivers. This project was tested with
 It is designed to use the TM1638 to drive 8 7-segment displays (with decimal points), along with 8 LEDs for the status.
 
 Schematics will be published once the project is in a practically usable state.
+
