@@ -35,45 +35,46 @@ void main() {
 	gpio_put(LED_PIN, false);
 	sleep_ms(500);
 
-	motion_dump_status();
-	motion_plan_move(50.0f, 0.0f, 10.0f, 1.0f);
-	motion_dump_status();
-	gpio_put(LED_PIN, true);
-	motion_main(false);
-	gpio_put(LED_PIN, false);
-	sleep_ms(500);
-
-	motion_dump_status();
-	motion_plan_move(50.0f, 360.0f, 1.0f, 45.0f);
-	motion_dump_status();
-	gpio_put(LED_PIN, true);
-	motion_main(false);
-	gpio_put(LED_PIN, false);
-	sleep_ms(500);
-
-	motion_dump_status();
-	motion_plan_move(0.0f, 0.0f, 10.0f, 45.0f);
-	motion_dump_status();
-	gpio_put(LED_PIN, true);
-	motion_main(false);
-	gpio_put(LED_PIN, false);
-	sleep_ms(500);
-
-	motion_dump_status();
-	motion_thread_metric(100.0f, 5.0f, true);
-	motion_dump_status();
-	gpio_put(LED_PIN, true);
-	motion_main(false);
-	gpio_put(LED_PIN, false);
-	sleep_ms(500);
-
-	motion_dump_status();
-
 	while(true) {
+		motion_dump_status();
+		motion_plan_move(50.0f, 0.0f, 10.0f, 1.0f);
+		motion_dump_status();
+		gpio_put(LED_PIN, true);
+		motion_main(false);
+		gpio_put(LED_PIN, false);
+		sleep_ms(500);
+
+		motion_dump_status();
+		motion_plan_move(50.0f, 360.0f, 1.0f, 45.0f);
+		motion_dump_status();
+		gpio_put(LED_PIN, true);
+		motion_main(false);
+		gpio_put(LED_PIN, false);
+		sleep_ms(500);
+
+		motion_dump_status();
+		motion_plan_move(0.0f, 0.0f, 10.0f, 45.0f);
+		motion_dump_status();
+		gpio_put(LED_PIN, true);
+		motion_main(false);
+		gpio_put(LED_PIN, false);
+		sleep_ms(500);
+
+		motion_dump_status();
+		motion_thread_metric(100.0f, 5.0f, true);
+		motion_dump_status();
+		gpio_put(LED_PIN, true);
+		motion_main(false);
+		gpio_put(LED_PIN, false);
+		sleep_ms(500);
+
+		motion_dump_status();
+
 		printf("End of program\n");
 		gpio_put(LED_PIN, true);
 		sleep_ms(900);
 		gpio_put(LED_PIN, false);
+		sleep_ms(100);
 	}
 	// initialiseDisplay();
 	// initialiseLeadscrew();
