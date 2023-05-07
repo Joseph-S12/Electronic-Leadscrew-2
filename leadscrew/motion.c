@@ -83,8 +83,8 @@ void motion_get_position(float *x_mm, float *a_deg) {
 }
 
 /* Motion core main */
-void motion_main() {
-  while(true) {
+void motion_main(bool loop) {
+  while(loop) {
     while(!run) { sleep_ms(IDLE_LOOP_MS); }
     move();
   }
