@@ -51,14 +51,14 @@ void motion_dump_status() {
     "    X_ADVANCE_MM=%2.3f X_STEPS=%d X_MICROSTEPS=%d X_RATIO=%1.3f\n",
     (float)X_ADVANCE_MM, (int)X_STEPS, (int)X_MICROSTEPS, (float)X_RATIO
   );
-  printf("    X_MM_PER_STEP\n", (float)X_MM_PER_STEP);
+  printf("    X_MM_PER_STEP=%f\n", (float)X_MM_PER_STEP);
 
   printf("  A motion parameters\n");
   printf(
     "    A_STEPS=%d A_MICROSTEPS=%d A_RATIO=%1.3f\n",
     (int)A_STEPS, (int)A_MICROSTEPS, (float)A_RATIO
   );
-  printf("    A_DEG_PER_STEP\n", (float)A_DEG_PER_STEP);
+  printf("    A_DEG_PER_STEP=%f\n", (float)A_DEG_PER_STEP);
 
   printf("  Acceleration table (%d entries in us)\n    ", (int)accel_delays_size);
   for(int i = 0; i < accel_delays_size; ++i)
