@@ -18,8 +18,8 @@
 /* Pin configuration */
 
 /* Motor enable */
-#define STEP_M_EN_PIN 999
-#define STEP_M_EN_INVERT false
+// #define STEP_M_EN_PIN 999
+// #define STEP_M_EN_INVERT false
 
 /* Pulse pins */
 #define STEP_X_PUL_PIN 12

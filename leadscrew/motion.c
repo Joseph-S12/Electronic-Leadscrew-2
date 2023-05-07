@@ -141,7 +141,7 @@ static void plan_accel_table(float accel_time_s, float lead_step_unit, float lea
 /* GPIO functions */
 
 static inline void motor_en(bool en) {
-  gpio_put(STEP_M_EN_PIN, en != STEP_M_EN_INVERT);
+  // gpio_put(STEP_M_EN_PIN, en != STEP_M_EN_INVERT);
 }
 
 static inline void x_pulse(bool step) {
