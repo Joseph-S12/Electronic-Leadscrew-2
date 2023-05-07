@@ -16,12 +16,8 @@
 #define ACCEL_TABLE_MIN_DELAY_US 10
 
 /* Microseconds */
-static int accel_delays[] = {
-  10000, 8000, 6400, 5000, 4000, 3200, 2500, 2000, 1600, 1250,
-  1000, 800, 640, 500, 400, 320, 250, 200, 160, 125,
-  100, 80, 64, 50
-};
-static int accel_delays_size = 24; // Size of accel_delays
+static int accel_delays[ACCEL_TABLE_MAX_SIZE];
+static int accel_delays_size = 0; // Size of accel_delays
 
 /* Internal units are whole microsteps */
 static int32_t x_pos, a_pos;
