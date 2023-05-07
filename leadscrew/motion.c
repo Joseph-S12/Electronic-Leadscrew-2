@@ -133,6 +133,8 @@ void motion_plan_move(float x1_mm, float a1_deg, float x_feedrate_mm_s, float a_
     follower_rate = round((float)FOLLOWER_UNIT * x_over_a);
     steps_left = a_steps;
   }
+
+  run = true;
 }
 
 /* Threaded */
@@ -145,8 +147,6 @@ void motion_spiral_move_x(float x1_mm, float t_pitch_mm, float t_degrees) {
   float a1_deg = a_step_per_x_step * (x1_mm - x0_mm);
 
   motion_plan_move(x1_mm, a1_deg, 1000000, 1000000);
-
-  run = true;
 }
 
 /* Internal functions */
