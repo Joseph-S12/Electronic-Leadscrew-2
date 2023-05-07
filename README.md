@@ -12,3 +12,12 @@ It is designed to use the TM1638 to drive 8 7-segment displays (with decimal poi
 
 Schematics will be published once the project is in a practically usable state, before the end of 2023.
 
+# Building
+
+```
+mkdir build
+cd build
+cmake ..
+```
+
+Once that's done once, you can just `cd build` then `make`
