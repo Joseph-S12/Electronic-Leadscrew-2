@@ -40,7 +40,7 @@ void main() {
 		sleep_ms(500);
 
 		printf("Move to X50 A360\n");
-		motion_plan_move(50.0f, 360.0f, 1.0f, 45.0f);
+		motion_plan_move(50.0f, 360.0f, 1.0f, 360.0f);
 		motion_dump_status();
 		gpio_put(LED_PIN, true);
 		motion_main(false);
@@ -49,7 +49,7 @@ void main() {
 		sleep_ms(500);
 
 		printf("Move to X0 A0\n");
-		motion_plan_move(0.0f, 0.0f, 10.0f, 45.0f);
+		motion_plan_move(0.0f, 0.0f, 10.0f, 360.0f);
 		motion_dump_status();
 		gpio_put(LED_PIN, true);
 		motion_main(false);
@@ -57,8 +57,8 @@ void main() {
 		motion_dump_status();
 		sleep_ms(500);
 
-		printf("M5 x 100mm LH thread\n");
-		motion_thread_metric(100.0f, 5.0f, true);
+		printf("100mm long LH thread pitch 2mm\n");
+		motion_thread_metric(100.0f, 2.0f, true);
 		motion_dump_status();
 		gpio_put(LED_PIN, true);
 		motion_main(false);
@@ -66,6 +66,14 @@ void main() {
 		motion_dump_status();
 		sleep_ms(500);
 
+		printf("Move to X0 A0\n");
+		motion_plan_move(0.0f, 0.0f, 10.0f, 360.0f);
+		motion_dump_status();
+		gpio_put(LED_PIN, true);
+		motion_main(false);
+		gpio_put(LED_PIN, false);
+		motion_dump_status();
+		sleep_ms(500);
 
 		printf("End of program\n");
 		gpio_put(LED_PIN, true);
