@@ -1,12 +1,14 @@
+#include "pico/time.h"
+#include "pico/float.h"
+#include "pico/stdlib.h"
+#include "stdio.h"
+#include "stdint.h"
+#include "stdlib.h"
+
 #include "leadscrew.h"
 #include "spindle.h"
 #include "gpio.h"
 
-#include "pico/time.h"
-#include "pico/float.h"
-#include "pico/stdlib.h"
-#include <stdlib.h>
-#include <stdio.h>
 
 volatile uint32_t leadscrewCounter;
 volatile int diff;
@@ -44,15 +46,15 @@ void doLeadscrewPulse(){
 	uint32_t step;
 	uint32_t currentSpindleCounter=spindleCounter;
 	//Do calculations for the current desired step
-	step =(uint32_t) ((LEADSCREW_NUM_STEPS * LEADSCREW_NUM_MICROSTEPS  * pitch_1000 * (uint64_t) currentSpindleCounter) / 
+	step =(uint32_t) ((LEADSCREW_NUM_STEPS * LEADSCREW_NUM_MICROSTEPS  * pitch_1000 * (uint64_t) currentSpindleCounter) /
 			(SPINDLE_NUM_STEPS * SPINDLE_NUM_MICROSTEPS * LEADSCREW_PITCH_1000)) ;
-  
+
 	//Calculates how many steps need to be performed
 
 	step = step - leadscrewCounter;
 	leadscrewCounter+=step;
 	// printf("%ld, %ld\n", step, leadscrewCounter);
-	
+
 	if ((gpio_get(REVERSE_PIN) && gpio_get(LEFT_HAND_PIN)) || (gpio_get(FORWARD_PIN) && gpio_get(RIGHT_HAND_PIN))){
 		leadscrew_direction_set=0;
 	}

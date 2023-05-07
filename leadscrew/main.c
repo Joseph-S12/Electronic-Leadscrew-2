@@ -1,17 +1,16 @@
-#include "main.h"
-#include "gpio.h"
-#include "gpio.c"
-#include "leadscrew.h"
-#include "leadscrew.c"
-#include "spindle.h"
-#include "spindle.c"
-#include "display.h"
-#include "display.c"
 
 #include "pico/stdlib.h"
 #include "pico/multicore.h"
 #include "pico/time.h"
-#include <stdio.h>
+#include "stdio.h"
+#include "stdint.h"
+
+#include "main.h"
+#include "gpio.h"
+#include "leadscrew.h"
+#include "spindle.h"
+#include "display.h"
+#include "motion.h"
 
 //This is the initialisation code for core 0. Everything on this core after initialisation is interrupt driven and deals with the quadrature encoder and driving the stepper.
 //It is interrupted by the quadrature encoder pulses.

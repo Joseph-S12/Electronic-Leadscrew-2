@@ -10,14 +10,14 @@
 #define LEADSCREW_PITCH_1000 1500
 #endif
 
-extern void initialiseLeadscrew();
-extern void resetCounters();
-extern void setLeadscrewPitch(uint16_t);
-extern void setLeadscrewReverse(bool);
-extern volatile uint8_t checkDir();
-extern void doLeadscrewPulse();
-extern void doLeadscrewSteps(uint16_t);
-extern uint16_t getPitch();
-extern void setPitch(uint16_t);
+void initialiseLeadscrew();
+void resetCounters();
+void setLeadscrewPitch(uint16_t);
+void setLeadscrewReverse(bool);
+volatile uint8_t checkDir();
+void doLeadscrewPulse();
+void doLeadscrewSteps(uint16_t);
+uint16_t getPitch();
+void setPitch(uint16_t);
 
 extern volatile uint16_t pitch_1000;

@@ -8,6 +8,6 @@
 #endif
 
 extern volatile uint32_t spindleCounter;
-extern void setSpindleDir(uint8_t);
-extern void doSpindleSteps(uint16_t);
-extern void indexSpindle(uint16_t, uint16_t);
+void setSpindleDir(uint8_t);
+void doSpindleSteps(uint16_t);
+void indexSpindle(uint16_t, uint16_t);

@@ -4,6 +4,8 @@
 #include "stdlib.h"
 #include "math.h"
 #include "hardware.h"
+#include "motion.h"
+#include "stdio.h"
 
 #define X_MM_PER_STEP ((float)X_ADVANCE_MM / ((float)(X_STEPS * X_MICROSTEPS) * X_RATIO))
 #define A_DEG_PER_STEP ((float)360 / ((float)(A_STEPS * A_MICROSTEPS) * A_RATIO))
