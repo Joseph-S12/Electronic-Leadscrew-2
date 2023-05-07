@@ -1,7 +1,8 @@
 // Motion control module
 
+#include "pico/stdlib.h"
 #include "stdlib.h"
-#include <math.h>
+#include "math.h"
 #include "hardware.h"
 
 #define X_MM_PER_STEP ((float)X_ADVANCE_MM / ((float)(X_STEPS * X_MICROSTEPS) * X_RATIO))
