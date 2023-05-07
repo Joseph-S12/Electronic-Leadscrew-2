@@ -14,7 +14,7 @@
 #define STEP_US 10
 #define LOOP_OFFSET_US (1 + STEP_US)
 
-#define ACCEL_TABLE_MAX_SIZE 800
+#define ACCEL_TABLE_MAX_SIZE 2000
 #define ACCEL_TABLE_MIN_DELAY_US 10
 
 /* Microseconds */
@@ -61,9 +61,9 @@ void motion_dump_status() {
   printf("A_DEG_PER_STEP=%f\n", (float)A_DEG_PER_STEP);
 
   printf("  Acceleration table (%d entries in us):\t", (int)accel_delays_size);
-  for(int i = 0; i < accel_delays_size; ++i)
-    printf("%d ", (int)accel_delays[i]);
-  printf("\n");
+  // for(int i = 0; i < accel_delays_size; ++i)
+  //   printf("%d ", (int)accel_delays[i]);
+  printf("...%d\n", accel_delays[accel_delays_size - 1]);
 
   printf("  Current position (microsteps): X=%d A=%d\t", (int)x_pos, (int)a_pos);
   float x, a;
@@ -96,6 +96,8 @@ void motion_main(bool loop) {
 
 /* Motion Planner */
 void motion_plan_move(float x1_mm, float a1_deg, float x_feedrate_mm_s, float a_feedrate_deg_s) {
+  printf("Plan move to X %2.3f mm, A %2.3f deg at %2.3f mm/s, %2.3f deg/s max \n", x1_mm, a1_deg, x_feedrate_mm_s, a_feedrate_deg_s);
+
   // Determine end position in native units
   int32_t x1_pos = round(x1_mm / (float)X_MM_PER_STEP);
   int32_t a1_pos = round(a1_deg / (float)A_DEG_PER_STEP);
@@ -128,11 +130,11 @@ void motion_plan_move(float x1_mm, float a1_deg, float x_feedrate_mm_s, float a_
   // Determine the number of lead steps required to accelerate and follower rate
   if(x_leads) {
     plan_accel_table(accel_time_s, X_MM_PER_STEP, x_feedrate_mm_s);
-    follower_rate = round((float)FOLLOWER_UNIT / x_over_a);
+    follower_rate = round((float)FOLLOWER_UNIT * (float)a_steps / (float)x_steps);
     steps_left = x_steps;
   } else {
     plan_accel_table(accel_time_s, A_DEG_PER_STEP, a_feedrate_deg_s);
-    follower_rate = round((float)FOLLOWER_UNIT * x_over_a);
+    follower_rate = round((float)FOLLOWER_UNIT * (float)x_steps / (float)a_steps);
     steps_left = a_steps;
   }
 
@@ -141,12 +143,10 @@ void motion_plan_move(float x1_mm, float a1_deg, float x_feedrate_mm_s, float a_
 
 /* Threaded */
 void motion_spiral_move_x(float x1_mm, float t_pitch_mm, float t_degrees) {
-  float a_step_per_x_step = (t_degrees / t_pitch_mm) * (X_MM_PER_STEP / A_DEG_PER_STEP);
-
   float x0_mm, a0_deg;
   motion_get_position(&x0_mm, &a0_deg);
 
-  float a1_deg = a_step_per_x_step * (x1_mm - x0_mm);
+  float a1_deg = (t_degrees / t_pitch_mm) * (x1_mm - x0_mm);
 
   motion_plan_move(x1_mm, a1_deg, 1000000, 1000000);
 }
@@ -155,6 +155,8 @@ void motion_spiral_move_x(float x1_mm, float t_pitch_mm, float t_degrees) {
 
 /* Acceleration table computation */
 static void plan_accel_table(float accel_time_s, float lead_step_unit, float lead_feedrate_unit_s) {
+  printf("Plan acceleration over %2.3f with step size %2.3f u/step %2.3f u/s\n", accel_time_s, lead_step_unit, lead_feedrate_unit_s);
+
   float accel_unit_s2 = lead_feedrate_unit_s / accel_time_s;
   float accel_disp_units = 0.5f * accel_unit_s2 * accel_time_s * accel_time_s;
   int accel_steps = round(accel_disp_units / lead_step_unit);
