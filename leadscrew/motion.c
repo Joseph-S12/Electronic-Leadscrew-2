@@ -118,9 +118,10 @@ void motion_plan_move(float x1_mm, float a1_deg, float x_feedrate_mm_s, float a_
   if(a_feedrate_deg_s > A_MAX_VELO_DEG_S) a_feedrate_deg_s = A_MAX_VELO_DEG_S;
 
   // Relate feedrates and limit one of them
-  float x_over_a = (float)x_steps / (float)a_steps;
-  if((a_feedrate_deg_s * x_over_a) > x_feedrate_mm_s) a_feedrate_deg_s = x_feedrate_mm_s / x_over_a;
-  else if(x_feedrate_mm_s > (a_feedrate_deg_s * x_over_a)) x_feedrate_mm_s = a_feedrate_deg_s * x_over_a;
+  float a_feedrate__x_steps = a_feedrate_deg_s * (float)x_steps;
+  float x_feedrate__a_steps = x_feedrate_mm_s * (float)a_steps;
+  if(a_feedrate__x_steps > x_feedrate__a_steps) a_feedrate_deg_s = x_feedrate__a_steps / (float)x_steps;
+  else if(x_feedrate__a_steps > a_feedrate__x_steps) x_feedrate_mm_s = a_feedrate__x_steps / (float)a_steps;
 
   // Calculate acceleration time per axis and take largest
   float x_accel_time_s = x_feedrate_mm_s / X_MAX_ACCEL_MM_S2;
