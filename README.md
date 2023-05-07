@@ -14,6 +14,14 @@ Schematics will be published once the project is in a practically usable state, 
 
 # Building
 
+## Dependencies
+
+You'll need the pico SDK cloned in /usr/share/pico-sdk.
+
+Make sure there are submodules or USB output won't work!
+
+## Build process
+
 ```
 mkdir build
 cd build
@@ -21,3 +29,7 @@ cmake ..
 ```
 
 Once that's done once, you can just `cd build` then `make`
+
+## Flashing
+
+Output appears in build/leadscrew/main.uf2 - copy this to the Pi Pico when it's in bootsel mode.
