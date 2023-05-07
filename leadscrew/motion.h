@@ -12,5 +12,5 @@ inline static void motion_thread_metric(float x1_mm, float metric_pitch, bool le
 }
 
 inline static void motion_thread_imperial(float x1_mm, float tpi, bool lefthanded) {
-  motion_spiral_move_x(x1_mm, lefthanded ? -25.4f : 25.4f, 360.0f / tpi);
+  motion_spiral_move_x(x1_mm, lefthanded ? -25.4f : 25.4f, 360.0f * tpi);
 }
