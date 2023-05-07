@@ -21,14 +21,14 @@
 // #define STEP_M_EN_PIN 999
 // #define STEP_M_EN_INVERT false
 
-/* Pulse pins */
+/* Leadscrew axis */
 #define STEP_X_PUL_PIN 12
-#define STEP_A_PUL_PIN 15
 #define STEP_X_PUL_INVERT false
-#define STEP_A_PUL_INVERT false
-
-/* Direction pins */
 #define STEP_X_DIR_PIN 11
-#define STEP_A_DIR_PIN 14
 #define STEP_X_DIR_INVERT false
+
+/* Spindle axis */
+#define STEP_A_PUL_PIN 15
+#define STEP_A_PUL_INVERT false
+#define STEP_A_DIR_PIN 14
 #define STEP_A_DIR_INVERT false

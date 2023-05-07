@@ -16,12 +16,6 @@
 #define RIGHT_HAND_PIN 8    	//Input, Pin 10
 #define LEFT_HAND_PIN 9     	//Input, Pin 11
 
-#define LEADSCREW_DIR_PIN 11	//Output, Pin 13
-#define LEADSCREW_PUL_PIN 12	//Output, Pin 14
-
-#define SPINDLE_DIR_PIN 14		//Output, Pin 19
-#define SPINDLE_PUL_PIN 15		//Output, Pin 20
-
 #define LED_PIN 25
 
 #define DISPLAY_CLK_PIN 18   	//Output, Pin 24

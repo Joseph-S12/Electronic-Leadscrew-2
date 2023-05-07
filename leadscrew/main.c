@@ -7,8 +7,6 @@
 
 #include "main.h"
 #include "gpio.h"
-#include "leadscrew.h"
-#include "spindle.h"
 #include "display.h"
 #include "motion.h"
 
