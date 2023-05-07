@@ -23,15 +23,11 @@ void main() {
 	stdio_init_all();
 
 	printf("Initialising GPIO\n");
+	initGPIO0();
+	printf("Initialised\n");
 
-	gpio_init(LED_PIN);
-	gpio_set_dir(LED_PIN, GPIO_OUT);
 	gpio_put(LED_PIN, true);
 	sleep_ms(500);
-
-	initGPIO0();
-
-	printf("Initialised\n");
 	gpio_put(LED_PIN, false);
 	sleep_ms(500);
 
