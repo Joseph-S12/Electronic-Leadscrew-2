@@ -10,28 +10,6 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 
-
-*.bin
-*.elf
-*.uf2
-generated/*
-elf2uf2/*
-picosdk/*
-*.in
-*.cmake
-leadscrew/elf2uf2/src/ELF2UF2Build-stamp/ELF2UF2Build-configure
-leadscrew/elf2uf2/src/ELF2UF2Build-stamp/ELF2UF2Build-done
-leadscrew/elf2uf2/src/ELF2UF2Build-stamp/ELF2UF2Build-download
-leadscrew/elf2uf2/src/ELF2UF2Build-stamp/ELF2UF2Build-mkdir
-leadscrew/elf2uf2/src/ELF2UF2Build-stamp/ELF2UF2Build-patch
-leadscrew/elf2uf2/src/ELF2UF2Build-stamp/ELF2UF2Build-source_dirinfo.txt
-leadscrew/elf2uf2/src/ELF2UF2Build-stamp/ELF2UF2Build-update
-leadscrew/elf2uf2/tmp/ELF2UF2Build-cfgcmd.txt
-*.cmake
-*.dis
-*.map
-*.hex
-*.S
 *.gch
 
 /build/**
