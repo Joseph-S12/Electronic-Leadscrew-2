@@ -46,36 +46,38 @@ static void plan_accel_table(float accel_time_s, float lead_step_unit, float lea
 /* For debugging */
 void motion_dump_status() {
   printf("motion_dump_status()\n");
-  printf("  X motion parameters\n");
+  printf("  X motion parameters:\t");
   printf(
-    "    X_ADVANCE_MM=%2.3f X_STEPS=%d X_MICROSTEPS=%d X_RATIO=%1.3f\n",
+    "X_ADVANCE_MM=%2.3f X_STEPS=%d X_MICROSTEPS=%d X_RATIO=%1.3f ",
     (float)X_ADVANCE_MM, (int)X_STEPS, (int)X_MICROSTEPS, (float)X_RATIO
   );
-  printf("    X_MM_PER_STEP=%f\n", (float)X_MM_PER_STEP);
+  printf("X_MM_PER_STEP=%f\n", (float)X_MM_PER_STEP);
 
-  printf("  A motion parameters\n");
+  printf("  A motion parameters:\t");
   printf(
-    "    A_STEPS=%d A_MICROSTEPS=%d A_RATIO=%1.3f\n",
+    "A_STEPS=%d A_MICROSTEPS=%d A_RATIO=%1.3f ",
     (int)A_STEPS, (int)A_MICROSTEPS, (float)A_RATIO
   );
-  printf("    A_DEG_PER_STEP=%f\n", (float)A_DEG_PER_STEP);
+  printf("A_DEG_PER_STEP=%f\n", (float)A_DEG_PER_STEP);
 
-  printf("  Acceleration table (%d entries in us)\n    ", (int)accel_delays_size);
+  printf("  Acceleration table (%d entries in us):\t", (int)accel_delays_size);
   for(int i = 0; i < accel_delays_size; ++i)
     printf("%d ", (int)accel_delays[i]);
   printf("\n");
 
-  printf("  Current position (microsteps) X=%d A=%d\n", (int)x_pos, (int)a_pos);
+  printf("  Current position (microsteps): X=%d A=%d\t", (int)x_pos, (int)a_pos);
   float x, a;
   motion_get_position(&x, &a);
-  printf("  Current posiiton X=%1.3f mm; A=%1.3f deg\n", x, a);
+  printf("X=%1.3f mm; A=%1.3f deg\n", x, a);
 
-  printf(run ? "  RUNNING\n" : "  IDLE\n");
-  printf(x_leads ? "  X Leading\n" : "  A Leading\n");
+  printf(
+    "  Status: %s\t%s Leading\tX %s\tA %s",
+    run ? "RUN" : "IDLE", x_leads ? "X" : "A",
+    x_forward ? "Forward" : "Reverse", a_forward ? "Forward" : "Reverse"
+  );
 
-  printf("  Follower registers\n    Rate=%d Count=%dn");
-  printf(x_forward ? "  X Forward\n" : "  X Reverse\n");
-  printf(a_forward ? "  A Forward\n" : "  A Reverse\n");
+  printf("  Steps left:\t%d\n", steps_left);
+  printf("  Follower registers:\tRate=%d Count=%d\n", follower_rate, follower_counter);
 }
 
 /* Retrieve coordinates */
@@ -86,10 +88,10 @@ void motion_get_position(float *x_mm, float *a_deg) {
 
 /* Motion core main */
 void motion_main(bool loop) {
-  while(loop) {
-    while(!run) { sleep_ms(IDLE_LOOP_MS); }
-    move();
-  }
+  do {
+    if(run) move();
+    else sleep_ms(IDLE_LOOP_MS);
+  } while(loop);
 }
 
 /* Motion Planner */
@@ -185,10 +187,12 @@ static inline void motor_en(bool en) {
 
 static inline void x_pulse(bool step) {
   gpio_put(STEP_X_PUL_PIN, step != STEP_X_PUL_INVERT);
+  if(step) x_forward ? ++x_pos : --x_pos;
 }
 
 static inline void a_pulse(bool step) {
   gpio_put(STEP_A_PUL_PIN, step != STEP_A_PUL_INVERT);
+  if(step) a_forward ? ++a_pos : --a_pos;
 }
 
 static inline void x_direction(bool forward) {
@@ -242,6 +246,8 @@ static void move() {
 
 /* Do a motion step */
 static void step() {
+  --steps_left;
+  
   follower_counter += follower_rate;
   bool follower_pulse = (follower_counter > FOLLOWER_UNIT);
   if(follower_pulse) follower_counter -= FOLLOWER_UNIT;
