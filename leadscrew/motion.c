@@ -40,6 +40,43 @@ static void step();
 static void plan_accel_table(float accel_time_s, float lead_step_unit, float lead_feedrate_unit_s);
 
 /* Entry points */
+
+/* For debugging */
+void motion_dump_status() {
+  printf("motion_dump_status()\n");
+  printf("  X motion parameters\n");
+  printf(
+    "    X_ADVANCE_MM=%2.3f X_STEPS=%d X_MICROSTEPS=%d X_RATIO=%1.3f\n",
+    (float)X_ADVANCE_MM, (int)X_STEPS, (int)X_MICROSTEPS, (float)X_RATIO
+  );
+  printf("    X_MM_PER_STEP\n", (float)X_MM_PER_STEP);
+
+  printf("  A motion parameters\n");
+  printf(
+    "    A_STEPS=%d A_MICROSTEPS=%d A_RATIO=%1.3f\n",
+    (int)A_STEPS, (int)A_MICROSTEPS, (float)A_RATIO
+  );
+  printf("    A_DEG_PER_STEP\n", (float)A_DEG_PER_STEP);
+
+  printf("  Acceleration table (%d entries in us)\n    ", (int)accel_delays_size);
+  for(int i = 0; i < accel_delays_size; ++i)
+    printf("%d ", (int)accel_delays[i]);
+  printf("\n");
+
+  printf("  Current position (microsteps) X=%d A=%d\n", (int)x_pos, (int)a_pos);
+  float x, a;
+  motion_get_position(&x, &a);
+  printf("  Current posiiton X=%1.3f mm; A=%1.3f deg\n", x, a);
+
+  printf(run ? "  RUNNING\n" : "  IDLE\n");
+  printf(x_leads ? "  X Leading\n" : "  A Leading\n");
+
+  printf("  Follower registers\n    Rate=%d Count=%dn");
+  printf(x_forward ? "  X Forward\n" : "  X Reverse\n");
+  printf(a_forward ? "  A Forward\n" : "  A Reverse\n");
+}
+
+/* Retrieve coordinates */
 void motion_get_position(float *x_mm, float *a_deg) {
   if(x_mm) *x_mm = (float)x_pos * (float)X_MM_PER_STEP;
   if(a_deg) *a_deg = (float)a_pos * (float)A_DEG_PER_STEP;
