@@ -22,6 +22,8 @@
 #define SPINDLE_DIR_PIN 14		//Output, Pin 19
 #define SPINDLE_PUL_PIN 15		//Output, Pin 20
 
+#define LED_PIN 25
+
 #define DISPLAY_CLK_PIN 18   	//Output, Pin 24
 #define DISPLAY_SIO_PIN 19   	//Output, Pin 25
 #define DISPLAY_STB_PIN 20   	//Output, Pin 26
