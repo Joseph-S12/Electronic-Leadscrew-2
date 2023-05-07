@@ -3,16 +3,16 @@
 /* Motion parameters */
 #define X_ADVANCE_MM 1.5f
 #define X_STEPS 200
-#define X_MICROSTEPS 4
+#define X_MICROSTEPS 5
 #define X_RATIO (2.0f / 1.0f)
 
-#define X_MAX_VELO_MM_S 50.0f
-#define X_MAX_ACCEL_MM_S2 100.0f
+#define X_MAX_VELO_MM_S 5.0f
+#define X_MAX_ACCEL_MM_S2 10.0f
 #define A_MAX_VELO_DEG_S 360.0f
 #define A_MAX_ACCEL_DEG_S2 720.0f
 
 #define A_STEPS 200
-#define A_MICROSTEPS 4
+#define A_MICROSTEPS 5
 #define A_RATIO (2.0f / 1.0f)
 
 /* Pin configuration */
