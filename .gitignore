@@ -33,3 +33,5 @@ leadscrew/elf2uf2/tmp/ELF2UF2Build-cfgcmd.txt
 *.hex
 *.S
 *.gch
+
+/build/**
