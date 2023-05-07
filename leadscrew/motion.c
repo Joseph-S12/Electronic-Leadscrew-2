@@ -226,9 +226,10 @@ static void move() {
   }
 
   /* Motion */
+  int delay = accel_delays[accel_index - 1];
   while(steps_left >= accel_index) {
     step();
-    sleep_us(accel_delays[accel_index]);
+    sleep_us(delay);
   }
 
   /* Run down */
@@ -247,7 +248,7 @@ static void move() {
 /* Do a motion step */
 static void step() {
   --steps_left;
-  
+
   follower_counter += follower_rate;
   bool follower_pulse = (follower_counter > FOLLOWER_UNIT);
   if(follower_pulse) follower_counter -= FOLLOWER_UNIT;
