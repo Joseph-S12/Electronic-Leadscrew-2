@@ -23,5 +23,5 @@ bool intercore_getcommand_nb(command_t *command) {
 }
 
 void intercore_respond_nb(response_t *response) {
-  queue_try_add(&response_q, response);
+  while(!queue_try_add(&response_q, response));
 }
