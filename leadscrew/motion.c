@@ -233,10 +233,9 @@ static void move() {
   }
 
   /* Motion */
-  int delay = accel_delays[accel_index - 1];
   while(steps_left >= accel_index) {
     step();
-    sleep_us(delay);
+    sleep_us(accel_delays[accel_index - 1]);
   }
 
   /* Run down */
