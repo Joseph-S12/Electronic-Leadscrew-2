@@ -226,12 +226,11 @@ static void move() {
   motor_en(true);
 
   /* Run up */
-  while(accel_index < accel_delays_size && accel_index < steps_left) {
+  while(accel_index < (accel_delays_size - 1) && accel_index < steps_left) {
     step();
     sleep_us(accel_delays[accel_index]);
     ++accel_index;
   }
-  --accel_index;
 
   /* Motion */
   while(steps_left > accel_index) {
@@ -246,7 +245,6 @@ static void move() {
     --accel_index;
   }
 
-  printf("n=%d i=%d\t", steps_left, accel_index);
 
   /* Strictly this might not be appropriate */
   motor_en(false);
