@@ -19,7 +19,7 @@ static void test_wait_motion() {
 		motion_dump_status();
 		float x, a;
 		motion_get_position(&x, &a);
-		updateRPM((int)x);
+		updateRPM((int)(x * 10.0f));
 		updatePitch((int)a);
 		printDisplay();
 	};
@@ -68,8 +68,8 @@ void main() {
 	motion_plan_move(0.0f, 0.0f, 10.0f, 360.0f);
 	test_wait_motion();
 
-	printf("100mm long LH thread pitch 2mm\n");
-	motion_thread_metric(100.0f, 2.0f, true);
+	printf("25mm long LH thread pitch 2mm\n");
+	motion_thread_metric(25.0f, 2.0f, true);
 	test_wait_motion();
 
 	printf("Move to X0 A0\n");

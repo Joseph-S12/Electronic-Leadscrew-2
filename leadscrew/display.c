@@ -5,26 +5,50 @@
 bool indicatorLEDs[8];
 uint8_t rpm_display[4];
 uint8_t pitch_display[4];
+uint8_t rpm_decimal = 1;
+uint8_t pitch_decimal = 3;
 
 //This is a table of which LEDs to activate, depending upon the digit that needs displaying
-const bool number[][8] = {  {0,0,1,1,1,1,1,1}, // 0
-                            {0,0,0,0,0,1,1,0},
-                            {0,1,0,1,1,0,1,1},
-                            {0,1,0,0,1,1,1,1},
-                            {0,1,1,0,0,1,1,0},
-                            {0,1,1,0,1,1,0,1},
-                            {0,1,1,1,1,1,0,1},
-                            {0,0,0,0,0,1,1,1},
-                            {0,1,1,1,1,1,1,1},
-                            {0,1,1,0,1,1,1,1}, // 9
-                            {0,0,0,0,0,0,0,0}, //
-                            {0,1,0,0,0,0,0,0}, // -
-                          };
+const uint8_t number[] = {
+  0b00111111,
+  0b00000110,
+  0b01011011,
+  0b01001111,
+  0b01100110, // 0-4
+  0b01101101,
+  0b01111101,
+  0b00000111,
+  0b01111111,
+  0b01101111, // 5-9
+  0b00000000, // Blank
+  0b01000000, // Hyphen
+};
+
+static void display_begin() {
+  gpio_put(DISPLAY_STB_PIN, 0);
+  sleep_us(100);
+}
+
+static void display_end() {
+  gpio_put(DISPLAY_STB_PIN, 1);
+  sleep_us(100);
+}
+
+static void display_byte(uint8_t byte) {
+  for (int8_t i = 7; i >= 0; i--) {
+    gpio_put(DISPLAY_SIO_PIN, byte & 1);
+    byte >>= 1;
+    gpio_put(DISPLAY_CLK_PIN, 0);
+    sleep_us(100);
+    gpio_put(DISPLAY_CLK_PIN, 1);
+    sleep_us(100);
+  }
+}
 
 void initialiseDisplay() {
-  bool command0[8] = {1,0,0,0,1,1,1,1};
-  bool command1[8] = {0,1,0,0,0,0,0,0};
-  bool command2[8] = {1,1,0,0,0,0,0,0};
+  uint8_t command0 = 0b10001111;
+  uint8_t command1 = 0b01000000;
+  uint8_t command2 = 0b11000000;
 
   //initialise outputs
   gpio_put(DISPLAY_STB_PIN, 1);
@@ -43,57 +67,25 @@ void initialiseDisplay() {
   }
 
   //Start the board
-  gpio_put(DISPLAY_STB_PIN, 0);
-  for (int8_t i = 7; i >= 0; i--) {
-    sleep_us(100);
-    gpio_put(DISPLAY_SIO_PIN, command0[i]);
-    gpio_put(DISPLAY_CLK_PIN, 0);
-    sleep_us(100);
-    gpio_put(DISPLAY_CLK_PIN, 1);
-  }
-  gpio_put(DISPLAY_STB_PIN, 1);
-  sleep_us(100);
+  display_begin();
+  display_byte(command0);
 
   //Start resetting by setting to auto increment
-  gpio_put(DISPLAY_STB_PIN, 0);
-  for (int8_t i = 7; i >= 0; i--) {
-    sleep_us(100);
-    gpio_put(DISPLAY_SIO_PIN, command1[i]);
-    gpio_put(DISPLAY_CLK_PIN, 0);
-    sleep_us(100);
-    gpio_put(DISPLAY_CLK_PIN, 1);
-  }
-  gpio_put(DISPLAY_STB_PIN, 1);
-  sleep_us(100);
+  display_byte(command1);
+  display_end();
 
   //Set start address to 0
-  gpio_put(DISPLAY_STB_PIN, 0);
-  for (int8_t i = 7; i >= 0; i--) {
-    sleep_us(100);
-    gpio_put(DISPLAY_SIO_PIN, command2[i]);
-    gpio_put(DISPLAY_CLK_PIN, 0);
-    sleep_us(100);
-    gpio_put(DISPLAY_CLK_PIN, 1);
-  }
+  display_begin();
+  display_byte(command2);
 
   //Wipe all display digits
-  for (size_t x = 0; x < 16; x++) {
-    for (int8_t i = 7; i >= 0; i--) {
-      sleep_us(100);
-      gpio_put(DISPLAY_SIO_PIN, 0);
-      gpio_put(DISPLAY_CLK_PIN, 0);
-      sleep_us(100);
-      gpio_put(DISPLAY_CLK_PIN, 1);
-    }
-  }
-  gpio_put(DISPLAY_STB_PIN, 1);
-  sleep_us(100);
+  for (size_t x = 0; x < 16; x++)
+    display_byte(number[10]);
 
-  //Flashes the LED`
-  sleep_ms(500);
-  gpio_put(25, true);
-  sleep_ms(500);
-  gpio_put(25, false);
+  display_end();
+
+  //Flashes the LED
+  gpio_flash_led(500, 500);
 
   updateRPM(0000);
   updatePitch(1500);
@@ -101,9 +93,9 @@ void initialiseDisplay() {
 }
 
 void updateStatus(int status){
-
-  for (size_t i = 0; i < 8; i++) {
-    indicatorLEDs[i] = ((status & (int) pow(2, (double) i))!=0);
+  for (size_t i = 0; i < 8; ++i) {
+    indicatorLEDs[i] = status & 1;
+    status >>= 1;
   }
 }
 
@@ -115,25 +107,25 @@ void update_display(uint8_t display[], uint16_t number) {
     return;
   }
 
-  if(number >= 8000) { display[0] += 8; number -= 8000; }
-  if(number >= 4000) { display[0] += 4; number -= 4000; }
-  if(number >= 2000) { display[0] += 2; number -= 2000; }
-  if(number >= 1000) { display[0] += 1; number -= 1000; }
-  if(!display[0]) display[0] = 10;
+  if(number >= 8000) { display[3] += 8; number -= 8000; }
+  if(number >= 4000) { display[3] += 4; number -= 4000; }
+  if(number >= 2000) { display[3] += 2; number -= 2000; }
+  if(number >= 1000) { display[3] += 1; number -= 1000; }
+  if(!display[3]) display[3] = 10;
 
-  if(number >= 800) { display[1] += 8; number -= 800; }
-  if(number >= 400) { display[1] += 4; number -= 400; }
-  if(number >= 200) { display[1] += 2; number -= 200; }
-  if(number >= 100) { display[1] += 1; number -= 100; }
-  if(!display[1] && display[0] == 10) display[1] = 10;
+  if(number >= 800) { display[2] += 8; number -= 800; }
+  if(number >= 400) { display[2] += 4; number -= 400; }
+  if(number >= 200) { display[2] += 2; number -= 200; }
+  if(number >= 100) { display[2] += 1; number -= 100; }
+  if(!display[2] && display[3] == 10) display[2] = 10;
 
-  if(number >= 80) { display[2] += 8; number -= 80; }
-  if(number >= 40) { display[2] += 4; number -= 40; }
-  if(number >= 20) { display[2] += 2; number -= 20; }
-  if(number >= 10) { display[2] += 1; number -= 10; }
-  if(!display[2] && display[1] == 10) display[2] = 10;
+  if(number >= 80) { display[1] += 8; number -= 80; }
+  if(number >= 40) { display[1] += 4; number -= 40; }
+  if(number >= 20) { display[1] += 2; number -= 20; }
+  if(number >= 10) { display[1] += 1; number -= 10; }
+  if(!display[1] && display[2] == 10) display[1] = 10;
 
-  display[3] = number;
+  display[0] = number;
 }
 
 void updateRPM(uint16_t rpm_int) {
@@ -145,58 +137,24 @@ void updatePitch(uint16_t pitch_int) {
 }
 
 void printDisplay(){
-  bool command[8] = {1,1,0,0,0,0,0,0};
+  uint8_t command = 0b11000000;
 
   //Set start address
-  gpio_put(DISPLAY_STB_PIN, 0);
-  for (int8_t i = 7; i >= 0; i--) {
-    sleep_us(100);
-    gpio_put(DISPLAY_SIO_PIN, command[i]);
-    gpio_put(DISPLAY_CLK_PIN, 0);
-    sleep_us(100);
-    gpio_put(DISPLAY_CLK_PIN, 1);
-  }
-
+  display_begin();
+  display_byte(command);
 
   //Set rpm digits
-  for (size_t x = 0; x < 4; x++) {
-    for (int8_t i = 7; i >= 0; i--) {
-      sleep_us(100);
-      gpio_put(DISPLAY_SIO_PIN, number[rpm_display[x]][i]);
-      gpio_put(DISPLAY_CLK_PIN, 0);
-      sleep_us(100);
-      gpio_put(DISPLAY_CLK_PIN, 1);
-    }
-    for (int8_t i = 7; i >= 0; i--) {
-      sleep_us(100);
-      gpio_put(DISPLAY_SIO_PIN, indicatorLEDs[x]);
-      gpio_put(DISPLAY_CLK_PIN, 0);
-      sleep_us(100);
-      gpio_put(DISPLAY_CLK_PIN, 1);
-    }
+  for (int x = 3; x >= 0; --x) {
+    uint8_t decimal_indicator = (x == rpm_decimal) ? 0x80 : 0;
+    display_byte(number[rpm_display[x]] | decimal_indicator);
+    display_byte(indicatorLEDs[x] ? 0xff : 0x00);
   }
   //Set pitch digits
-  for (size_t x = 0; x < 4; x++) {
-    for (int8_t i = 7; i >= 0; i--) {
-      sleep_us(100);
-      if (x == 0 && i == 0){
-        gpio_put(DISPLAY_SIO_PIN, 1);
-      }
-      else {
-        gpio_put(DISPLAY_SIO_PIN, number[pitch_display[x]][i]);
-      }
-      gpio_put(DISPLAY_CLK_PIN, 0);
-      sleep_us(100);
-      gpio_put(DISPLAY_CLK_PIN, 1);
-    }
-    for (int8_t i = 7; i >= 0; i--) {
-      sleep_us(100);
-      gpio_put(DISPLAY_SIO_PIN, indicatorLEDs[x+4]);
-      gpio_put(DISPLAY_CLK_PIN, 0);
-      sleep_us(100);
-      gpio_put(DISPLAY_CLK_PIN, 1);
-    }
+  for (int x = 3; x >= 0; --x) {
+    uint8_t decimal_indicator = (x == pitch_decimal) ? 0x80 : 0;
+    display_byte(number[pitch_display[x]] | decimal_indicator);
+    display_byte(indicatorLEDs[x + 4] ? 0xff : 0x00);
   }
-  gpio_put(DISPLAY_STB_PIN, 1);
-  sleep_us(100);
+
+  display_end();
 }
