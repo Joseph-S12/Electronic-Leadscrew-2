@@ -226,6 +226,10 @@ static void move() {
   motor_en(true);
 
   while(steps_left > 0) {
+#ifdef MOTION_DEBUG
+    printf("n=%d i=%d\t", steps_left, accel_index);
+    if(!(steps_left & 0x7)) printf("\n");
+#endif
     step();
     sleep_us(accel_delays[accel_index]);
 
@@ -236,6 +240,9 @@ static void move() {
       --accel_index;
   }
 
+#ifdef MOTION_DEBUG
+  printf("n=%d i=%d\n", steps_left, accel_index);
+#endif
 
   /* Strictly this might not be appropriate */
   motor_en(false);
