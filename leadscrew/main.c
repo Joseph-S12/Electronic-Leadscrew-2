@@ -81,6 +81,25 @@ void main() {
 
 	reset_usb_boot(0, 0);
 
+	/* TODO */
+	// Infinite loop
+	// Read the switch inputs
+	// Get motion status
+	// When RUNNING
+	//   Check if F/R switch released
+	//     Call motion stop
+	// When STOPPED
+	//   Check forward / reverse and status = STOPPED
+	//     Read LH/RH switch
+	//     Call motion plan direction indicate F/B L/R
+	//     Call motion run
+	//   Otherwise
+	//     Check metric / imperial switch
+	//       Swap out and display current value
+	//     Read UP / DOWN
+	//       Adjust TPI or mm pitch
+
+
 	// initialiseLeadscrew();
 	// multicore_launch_core1(&core_1_main);
 	//
