@@ -2,6 +2,7 @@
 #include "pico/stdlib.h"
 #include "pico/multicore.h"
 #include "pico/time.h"
+#include "pico/bootrom.h"
 #include "stdio.h"
 #include "stdint.h"
 
@@ -92,6 +93,8 @@ void main() {
 		sleep_ms(900);
 		gpio_put(LED_PIN, false);
 		sleep_ms(2100);
+
+		reset_usb_boot(0, 0);
 	}
 	// initialiseDisplay();
 	// initialiseLeadscrew();
