@@ -225,24 +225,15 @@ static void move() {
   /* Motors on */
   motor_en(true);
 
-  /* Run up */
-  while(accel_index < (accel_delays_size - 1) && accel_index < steps_left) {
-    step();
-    sleep_us(accel_delays[accel_index]);
-    ++accel_index;
-  }
-
-  /* Motion */
-  while(steps_left > accel_index) {
-    step();
-    sleep_us(accel_delays[accel_index]);
-  }
-
-  /* Run down */
   while(steps_left > 0) {
     step();
     sleep_us(accel_delays[accel_index]);
-    --accel_index;
+
+    if(accel_index < (accel_delays_size - 1) && accel_index < steps_left)
+      ++accel_index;
+
+    if(steps_left < accel_index)
+      --accel_index;
   }
 
 
