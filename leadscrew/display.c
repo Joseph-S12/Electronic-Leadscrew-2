@@ -7,7 +7,7 @@ uint8_t rpm_display[4];
 uint8_t pitch_display[4];
 
 //This is a table of which LEDs to activate, depending upon the digit that needs displaying
-const bool number[11][8] = {{0,0,1,1,1,1,1,1},
+const bool number[][8] = {  {0,0,1,1,1,1,1,1}, // 0
                             {0,0,0,0,0,1,1,0},
                             {0,1,0,1,1,0,1,1},
                             {0,1,0,0,1,1,1,1},
@@ -16,8 +16,10 @@ const bool number[11][8] = {{0,0,1,1,1,1,1,1},
                             {0,1,1,1,1,1,0,1},
                             {0,0,0,0,0,1,1,1},
                             {0,1,1,1,1,1,1,1},
-                            {0,1,1,0,1,1,1,1},
-                            {0,0,0,0,0,0,0,0}};
+                            {0,1,1,0,1,1,1,1}, // 9
+                            {0,0,0,0,0,0,0,0}, //
+                            {0,1,0,0,0,0,0,0}, // -
+                          };
 
 void initialiseDisplay() {
   bool command0[8] = {1,0,0,0,1,1,1,1};
@@ -105,31 +107,41 @@ void updateStatus(int status){
   }
 }
 
+void update_display(uint8_t display[], uint16_t number) {
+  for(int i=0; i<4; ++i) display[i] = 0;
+
+  if(number > 9999) {
+    for(int i=0; i<4; ++i) display[i] = 11;
+    return;
+  }
+
+  if(number >= 8000) { display[0] += 8; number -= 8000; }
+  if(number >= 4000) { display[0] += 4; number -= 4000; }
+  if(number >= 2000) { display[0] += 2; number -= 2000; }
+  if(number >= 1000) { display[0] += 1; number -= 1000; }
+  if(!display[0]) display[0] = 10;
+
+  if(number >= 800) { display[1] += 8; number -= 800; }
+  if(number >= 400) { display[1] += 4; number -= 400; }
+  if(number >= 200) { display[1] += 2; number -= 200; }
+  if(number >= 100) { display[1] += 1; number -= 100; }
+  if(!display[1] && display[0] == 10) display[1] = 10;
+
+  if(number >= 80) { display[2] += 8; number -= 80; }
+  if(number >= 40) { display[2] += 4; number -= 40; }
+  if(number >= 20) { display[2] += 2; number -= 20; }
+  if(number >= 10) { display[2] += 1; number -= 10; }
+  if(!display[2] && display[1] == 10) display[2] = 10;
+
+  display[3] = number;
+}
+
 void updateRPM(uint16_t rpm_int) {
-  rpm_display[0]=rpm_int/1000;
-  rpm_display[1]=(rpm_int/100)-(rpm_display[0]*10);
-  rpm_display[2]=(rpm_int/10)-(rpm_display[0]*100)-(rpm_display[1]*10);
-  rpm_display[3]=rpm_int-(rpm_display[0]*1000)-(rpm_display[1]*100)-(rpm_display[2]*10);
-  //Remove header 0s
-  if (rpm_display[0]==0 && rpm_display[1]==0 && rpm_display[2]==0){
-    rpm_display[0]=10;
-    rpm_display[1]=10;
-    rpm_display[2]=10;
-  }
-  else if (rpm_display[0]==0 && rpm_display[1]==0){
-    rpm_display[0]=10;
-    rpm_display[1]=10;
-  }
-  if (rpm_display[0]==0){
-    rpm_display[0]=10;
-  }
+  update_display(rpm_display, rpm_int);
 }
 
 void updatePitch(uint16_t pitch_int) {
-  pitch_display[0]=pitch_int/1000;
-  pitch_display[1]=(pitch_int/100)-(pitch_display[0]*10);
-  pitch_display[2]=(pitch_int/10)-(pitch_display[0]*100)-(pitch_display[1]*10);
-  pitch_display[3]=pitch_int-(pitch_display[0]*1000)-(pitch_display[1]*100)-(pitch_display[2]*10);
+  update_display(pitch_display, pitch_int);
 }
 
 void printDisplay(){

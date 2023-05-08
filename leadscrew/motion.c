@@ -6,6 +6,7 @@
 #include "hardware.h"
 #include "motion.h"
 #include "stdio.h"
+#include "intercore.h"
 
 #define X_MM_PER_STEP ((float)X_ADVANCE_MM / ((float)(X_STEPS * X_MICROSTEPS) * X_RATIO))
 #define A_DEG_PER_STEP ((float)360 / ((float)(A_STEPS * A_MICROSTEPS) * A_RATIO))
@@ -24,7 +25,7 @@ static int accel_delays_size = 0; // Size of accel_delays
 /* Internal units are whole microsteps */
 static int32_t x_pos, a_pos;
 
-static bool run = false;
+static int status = STATUS_STOPPED;
 
 #define FOLLOWER_UNIT 1000000000
 static bool x_leads = false;
@@ -33,12 +34,12 @@ static int32_t follower_counter = 0;
 
 static bool x_forward = true, a_forward = true;
 
-static int accel_index = 0;
 static int steps_left = 0;
 
 /* Internal prototypes */
 static void move();
 static void step();
+static void handle_commands();
 static void plan_accel_table(float accel_time_s, float lead_step_unit, float lead_feedrate_unit_s);
 
 /* Entry points */
@@ -64,10 +65,15 @@ void motion_dump_constants() {
 void motion_dump_status() {
   printf("Motion status\n");
 
-  printf("  Current position (microsteps): X=%d A=%d\t", (int)x_pos, (int)a_pos);
-  float x, a;
-  motion_get_position(&x, &a);
-  printf("X=%1.3f mm; A=%1.3f deg\n", x, a);
+  response_t response;
+  intercore_command(CMD_Q_STATUS, &response);
+
+  printf("  Current position (microsteps): X=%d A=%d\t", (int)response.x_pos, (int)response.a_pos);
+  printf(
+    "X=%1.3f mm; A=%1.3f deg\n",
+    (float)response.x_pos * X_MM_PER_STEP,
+    (float)response.a_pos * A_DEG_PER_STEP
+  );
 
   printf("  Acceleration table (%d entries in us):\t", (int)accel_delays_size);
 #ifdef MOTION_DEBUG
@@ -78,32 +84,50 @@ void motion_dump_status() {
 #endif
   printf("\n");
 
+  const char *status_str;
+  switch(response.status) {
+    case STATUS_STOPPED: status_str = "STOPPED"; break;
+    case STATUS_RUN: status_str = "RUNNING"; break;
+    case STATUS_STOPPING: status_str = "STOPPING"; break;
+    case STATUS_ESTOPPED: status_str = "ESTOPPED"; break;
+  }
+
   printf(
     "  Status: %s\t%s Leading\tX %s\tA %s",
-    run ? "RUN" : "IDLE", x_leads ? "X" : "A",
+    status_str ? "RUN" : "IDLE", x_leads ? "X" : "A",
     x_forward ? "Forward" : "Reverse", a_forward ? "Forward" : "Reverse"
   );
 
-  printf("  Steps left:\t%d\n", steps_left);
-  printf("  Follower registers:\tRate=%d Count=%d\n", follower_rate, follower_counter);
+  printf("  Steps left:\t%d\n", response.steps_left);
+  printf("  Follower rate=%d\n", follower_rate);
 }
 
 /* Retrieve coordinates */
 void motion_get_position(float *x_mm, float *a_deg) {
-  if(x_mm) *x_mm = (float)x_pos * (float)X_MM_PER_STEP;
-  if(a_deg) *a_deg = (float)a_pos * (float)A_DEG_PER_STEP;
+  response_t response;
+  intercore_command(CMD_Q_STATUS, &response);
+
+  if(x_mm) *x_mm = (float)response.x_pos * (float)X_MM_PER_STEP;
+  if(a_deg) *a_deg = (float)response.a_pos * (float)A_DEG_PER_STEP;
 }
 
-/* Motion core main */
-void motion_main(bool loop) {
-  do {
-    if(run) move();
-    else sleep_ms(IDLE_LOOP_MS);
-  } while(loop);
+bool motion_complete() {
+  response_t response;
+  intercore_command(CMD_Q_STATUS, &response);
+
+  return response.status == STATUS_STOPPED;
 }
 
 /* Motion Planner */
 void motion_plan_move(float x1_mm, float a1_deg, float x_feedrate_mm_s, float a_feedrate_deg_s) {
+  response_t response;
+  intercore_command(CMD_Q_STATUS, &response);
+  if(response.status != STATUS_STOPPED)
+  {
+    printf("MOTION PLAN WHILE NOT IDLE - ESTOP");
+    intercore_command(CMD_ESTOP, &response);
+  }
+
   printf("Plan move to X %2.3f mm, A %2.3f deg at %2.3f mm/s, %2.3f deg/s max \n", x1_mm, a1_deg, x_feedrate_mm_s, a_feedrate_deg_s);
 
   // Determine end position in native units
@@ -111,12 +135,12 @@ void motion_plan_move(float x1_mm, float a1_deg, float x_feedrate_mm_s, float a_
   int32_t a1_pos = round(a1_deg / (float)A_DEG_PER_STEP);
 
   // Determine motor directions
-  x_forward = x1_pos >= x_pos;
-  a_forward = a1_pos >= a_pos;
+  x_forward = x1_pos >= response.x_pos;
+  a_forward = a1_pos >= response.a_pos;
 
   // Determine step count for move
-  int32_t x_steps = abs(x1_pos - x_pos);
-  int32_t a_steps = abs(a1_pos - a_pos);
+  int32_t x_steps = abs(x1_pos - response.x_pos);
+  int32_t a_steps = abs(a1_pos - response.a_pos);
 
   // Determine which stepper leads and which follows
   x_leads = x_steps > a_steps;
@@ -147,7 +171,7 @@ void motion_plan_move(float x1_mm, float a1_deg, float x_feedrate_mm_s, float a_
     steps_left = a_steps;
   }
 
-  run = true;
+  intercore_command(CMD_RUN, &response);
 }
 
 /* Threaded */
@@ -158,6 +182,17 @@ void motion_spiral_move_x(float x1_mm, float t_pitch_mm, float t_degrees) {
   float a1_deg = (t_degrees / t_pitch_mm) * (x1_mm - x0_mm);
 
   motion_plan_move(x1_mm, a1_deg, 1000000, 1000000);
+}
+
+/* Motion core main */
+void motion_main() {
+  while(true) {
+    if(status == STATUS_RUN) move();
+    else {
+      sleep_ms(IDLE_LOOP_MS);
+      handle_commands();
+    }
+  }
 }
 
 /* Internal functions */
@@ -215,8 +250,11 @@ static inline void a_direction(bool forward) {
 }
 
 static void move() {
-  accel_index = 0;
+  int accel_index = 0;
   follower_counter = FOLLOWER_UNIT / 2;
+
+  /* Enable motors */
+  motor_en(true);
 
   /* Set pulse idle */
   x_pulse(false);
@@ -226,32 +264,31 @@ static void move() {
   x_direction(x_forward);
   a_direction(a_forward);
 
-  /* Motors on */
-  motor_en(true);
-
-  while(steps_left > 0) {
+  while(steps_left > 0 && status != STATUS_STOPPED) {
 #ifdef MOTION_DEBUG
     printf("n=%6d i=%4d T=%5d\t", steps_left, accel_index, accel_delays[accel_index]);
     if(!(steps_left & 0x7)) printf("\n");
 #endif
     step();
+    handle_commands();
+    if(status == STATUS_ESTOPPED) return;
+
     sleep_us(accel_delays[accel_index]);
 
     if(accel_index < (accel_delays_size - 1) && accel_index < steps_left)
       ++accel_index;
 
-    if(steps_left < accel_index)
+    if(steps_left < accel_index) status = STATUS_STOPPING;
+
+    if(status == STATUS_STOPPING)
       --accel_index;
+
+    if(accel_index == 0) status = STATUS_STOPPED;
   }
 
 #ifdef MOTION_DEBUG
   printf("n=%d i=%d\n", steps_left, accel_index);
 #endif
-
-  /* Strictly this might not be appropriate */
-  motor_en(false);
-
-  run = false;
 }
 
 /* Do a motion step */
@@ -274,4 +311,41 @@ static void step() {
 
   x_pulse(false);
   a_pulse(false);
+}
+
+static void handle_commands() {
+  command_t command;
+  response_t response;
+
+  if(intercore_getcommand_nb(&command)) {
+    switch(command.cmd) {
+    case CMD_ESTOP:
+      motor_en(false);
+      status = STATUS_ESTOPPED;
+      response.result = RESULT_OK;
+      break;
+
+    case CMD_Q_STATUS:
+      response.result = RESULT_OK;
+      break;
+
+    case CMD_RUN:
+      if(status == STATUS_STOPPED || status == STATUS_STOPPING)
+        status = STATUS_RUN;
+      response.result = RESULT_OK;
+      break;
+
+    case CMD_STOP:
+      if(status == STATUS_RUN) status = STATUS_STOPPING;
+      response.result = RESULT_OK;
+      break;
+    }
+
+    response.status = status;
+    response.x_pos = x_pos;
+    response.a_pos = a_pos;
+    response.steps_left = steps_left;
+
+    intercore_respond_nb(&response);
+  }
 }

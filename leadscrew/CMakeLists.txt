@@ -1,4 +1,4 @@
-add_executable(main main.c display.c gpio.c motion.c)
+add_executable(main main.c display.c gpio.c motion.c intercore.c)
 target_link_libraries(main pico_stdlib)
 target_link_libraries(main pico_multicore)
 target_link_libraries(main pico_time)

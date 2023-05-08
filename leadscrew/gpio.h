@@ -25,3 +25,10 @@
 
 extern void initGPIO0();
 extern int getMode();
+
+inline static void gpio_flash_led(int on, int off) {
+  gpio_put(LED_PIN, true);
+  sleep_ms(on);
+  gpio_put(LED_PIN, false);
+  sleep_ms(off);
+}

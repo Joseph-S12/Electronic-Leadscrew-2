@@ -10,6 +10,22 @@
 #include "gpio.h"
 #include "display.h"
 #include "motion.h"
+#include "intercore.h"
+
+static void test_wait_motion() {
+	motion_dump_status();
+	while(!motion_complete()) {
+		gpio_flash_led(333, 166);
+		motion_dump_status();
+		float x, a;
+		motion_get_position(&x, &a);
+		updateRPM((int)x);
+		updatePitch((int)a);
+		printDisplay();
+	};
+	motion_dump_status();
+	sleep_ms(500);
+}
 
 //This is the initialisation code for core 0. Everything on this core after initialisation is interrupt driven and deals with the quadrature encoder and driving the stepper.
 //It is interrupted by the quadrature encoder pulses.
@@ -23,80 +39,48 @@ void main() {
 
 	printf("Initialising GPIO\n");
 	initGPIO0();
+	printf("Initialising Queues\n");
+	intercore_init();
+	printf("Initialising Display\n");
+	initialiseDisplay();
+	printf("Launching Core 1\n");
+	multicore_launch_core1(motion_main);
 	printf("Initialised\n");
 
-	gpio_put(LED_PIN, true);
-	sleep_ms(500);
-	gpio_put(LED_PIN, false);
-	sleep_ms(500);
+	motion_dump_constants();
 
-	while(true) {
-		motion_dump_constants();
+	gpio_flash_led(500, 500);
 
-		printf("Move to X3 A0\n");
-		motion_plan_move(3.0f, 0.0f, 10.0f, 1.0f);
-		motion_dump_status();
-		gpio_put(LED_PIN, true);
-		motion_main(false);
-		gpio_put(LED_PIN, false);
-		motion_dump_status();
-		sleep_ms(500);
+	printf("Move to X30 A0\n");
+	motion_plan_move(30.0f, 0.0f, 10.0f, 1.0f);
+	test_wait_motion();
 
-		// About 20 steps more
-		printf("Move to X3.015 A0\n");
-		motion_plan_move(3.015f, 0.0f, 10.0f, 1.0f);
-		motion_dump_status();
-		gpio_put(LED_PIN, true);
-		motion_main(false);
-		gpio_put(LED_PIN, false);
-		motion_dump_status();
-		sleep_ms(500);
-		//
-		// printf("Move to X50 A360\n");
-		// motion_plan_move(50.0f, 360.0f, 1.0f, 360.0f);
-		// motion_dump_status();
-		// gpio_put(LED_PIN, true);
-		// motion_main(false);
-		// gpio_put(LED_PIN, false);
-		// motion_dump_status();
-		// sleep_ms(500);
-		//
-		// printf("Move to X0 A0\n");
-		// motion_plan_move(0.0f, 0.0f, 10.0f, 360.0f);
-		// motion_dump_status();
-		// gpio_put(LED_PIN, true);
-		// motion_main(false);
-		// gpio_put(LED_PIN, false);
-		// motion_dump_status();
-		// sleep_ms(500);
-		//
-		// printf("100mm long LH thread pitch 2mm\n");
-		// motion_thread_metric(100.0f, 2.0f, true);
-		// motion_dump_status();
-		// gpio_put(LED_PIN, true);
-		// motion_main(false);
-		// gpio_put(LED_PIN, false);
-		// motion_dump_status();
-		// sleep_ms(500);
-		//
-		// printf("Move to X0 A0\n");
-		// motion_plan_move(0.0f, 0.0f, 10.0f, 360.0f);
-		// motion_dump_status();
-		// gpio_put(LED_PIN, true);
-		// motion_main(false);
-		// gpio_put(LED_PIN, false);
-		// motion_dump_status();
-		// sleep_ms(500);
+	// About 20 steps more
+	printf("Move to X30.015 A0\n");
+	motion_plan_move(30.015f, 0.0f, 10.0f, 1.0f);
+	test_wait_motion();
 
-		printf("End of program\n");
-		gpio_put(LED_PIN, true);
-		sleep_ms(900);
-		gpio_put(LED_PIN, false);
-		sleep_ms(2100);
+	printf("Move to X50 A360\n");
+	motion_plan_move(50.0f, 360.0f, 1.0f, 360.0f);
+	test_wait_motion();
 
-		reset_usb_boot(0, 0);
-	}
-	// initialiseDisplay();
+	printf("Move to X0 A0\n");
+	motion_plan_move(0.0f, 0.0f, 10.0f, 360.0f);
+	test_wait_motion();
+
+	printf("100mm long LH thread pitch 2mm\n");
+	motion_thread_metric(100.0f, 2.0f, true);
+	test_wait_motion();
+
+	printf("Move to X0 A0\n");
+	motion_plan_move(0.0f, 0.0f, 10.0f, 360.0f);
+	test_wait_motion();
+
+	printf("End of program\n");
+	gpio_flash_led(1000, 0);
+
+	reset_usb_boot(0, 0);
+
 	// initialiseLeadscrew();
 	// multicore_launch_core1(&core_1_main);
 	//
@@ -169,7 +153,7 @@ void main() {
 
 void core_1_main(){
 	while (true){
-		sleep_ms(1000);
+		sleep_ms(500);
 		printDisplay();
 	}
 }
