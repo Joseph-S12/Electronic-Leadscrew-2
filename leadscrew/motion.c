@@ -275,13 +275,15 @@ static void move() {
 
     sleep_us(accel_delays[accel_index]);
 
-    if(accel_index < (accel_delays_size - 1) && accel_index < steps_left)
-      ++accel_index;
-
     if(steps_left < accel_index) status = STATUS_STOPPING;
 
     if(status == STATUS_STOPPING)
       --accel_index;
+    else if(accel_index < (accel_delays_size - 1) && accel_index < steps_left)
+      ++accel_index;
+
+    if(status == STATUS_STOPPING)
+
 
     if(accel_index == 0) status = STATUS_STOPPED;
   }
