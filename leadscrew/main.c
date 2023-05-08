@@ -12,17 +12,24 @@
 #include "motion.h"
 #include "intercore.h"
 
+static void display_loop() {
+	// motion_dump_status();
+	float x, a;
+	motion_get_position(&x, &a);
+	gpio_flash_led(333, 166);
+	updateRPM((int)round(x * 10.0f));
+	updatePitch((int)a);
+	printDisplay();
+}
+
 static void test_wait_motion() {
-	motion_dump_status();
-	while(!motion_complete()) {
-		gpio_flash_led(333, 166);
-		motion_dump_status();
-		float x, a;
-		motion_get_position(&x, &a);
-		updateRPM((int)round(x * 10.0f));
-		updatePitch((int)a);
-		printDisplay();
-	};
+	for(int i=0; i<5; ++i) display_loop();
+
+	printf("Stop motion\n");
+	motion_stop();
+
+	while(!motion_complete()) display_loop();
+
 	motion_dump_status();
 	sleep_ms(500);
 }
@@ -51,29 +58,22 @@ void main() {
 
 	gpio_flash_led(500, 500);
 
-	printf("Move to X30 A0\n");
-	motion_plan_move(30.0f, 0.0f, 10.0f, 1.0f);
+	printf("2mm pitch RH metric thread (forwards)\n");
+	motion_plan_thread_metric(2.0f);
+	motion_plan_direction(true, false);
+	motion_run();
 	test_wait_motion();
 
-	// About 20 steps more
-	printf("Move to X30.015 A0\n");
-	motion_plan_move(30.015f, 0.0f, 10.0f, 1.0f);
+	printf("12TPI LH imperial thread (backwards)\n");
+	motion_plan_thread_imperial(12.0f);
+	motion_plan_direction(false, true);
+	motion_run();
 	test_wait_motion();
 
-	printf("Move to X50 A360\n");
-	motion_plan_move(30.0f, 360.0f, 1.0f, 360.0f);
-	test_wait_motion();
-
-	printf("Move to X0 A0\n");
-	motion_plan_move(0.0f, 0.0f, 10.0f, 360.0f);
-	test_wait_motion();
-
-	printf("25mm long LH thread pitch 2mm\n");
-	motion_thread_metric(25.0f, 2.0f, true);
-	test_wait_motion();
-
-	printf("Move to X0 A0\n");
-	motion_plan_move(0.0f, 0.0f, 10.0f, 360.0f);
+	printf("40TPI LH imperial thread (backwards)\n");
+	motion_plan_thread_imperial(40.0f);
+	motion_plan_direction(false, true);
+	motion_run();
 	test_wait_motion();
 
 	printf("End of program\n");

@@ -41,6 +41,8 @@ static void move();
 static void step();
 static void handle_commands();
 static void plan_accel_table(float accel_time_s, float lead_step_unit, float lead_feedrate_unit_s);
+static void motion_plan_rates(uint32_t x_steps, uint32_t a_steps);
+static void motion_planner_lockout();
 
 /* Entry points */
 
@@ -118,8 +120,60 @@ bool motion_complete() {
   return response.status == STATUS_STOPPED;
 }
 
-/* Motion Planner */
-void motion_plan_move(float x1_mm, float a1_deg, float x_feedrate_mm_s, float a_feedrate_deg_s) {
+void motion_plan_thread_metric(float pitch_mm) {
+  printf("Plan metric thread %2.3fmm\n", pitch_mm);
+
+  /* These may want to be scaled up somewhat */
+  motion_plan_rates(
+    round(pitch_mm / X_MM_PER_STEP),
+    round(360.0f / A_DEG_PER_STEP)
+  );
+}
+
+void motion_plan_thread_imperial(float tpi) {
+  printf("Plan imperial thread %2.1f TPI\n", tpi);
+
+  /* These may want to be scaled up somewhat */
+  motion_plan_rates(
+    round(25.4f / X_MM_PER_STEP),
+    round(360.0f * tpi / A_DEG_PER_STEP)
+  );
+}
+
+void motion_plan_direction(bool forward, bool lefthanded) {
+  motion_planner_lockout();
+
+  printf("Plan direction %c %c-hand\n", forward ? 'F' : 'B', lefthanded ? 'L' : 'R');
+
+  a_forward = forward;
+  x_forward = (forward != lefthanded);
+}
+
+void motion_run() {
+  response_t response;
+  intercore_command(CMD_RUN, &response);
+}
+
+void motion_stop() {
+  response_t response;
+  intercore_command(CMD_STOP, &response);
+}
+
+/* Motion core main */
+void motion_main() {
+  while(true) {
+    if(status == STATUS_RUN) move();
+    else {
+      sleep_ms(IDLE_LOOP_MS);
+      handle_commands();
+    }
+  }
+}
+
+/* Internal functions */
+
+/* Lockout function */
+static void motion_planner_lockout() {
   response_t response;
   intercore_command(CMD_Q_STATUS, &response);
   if(response.status != STATUS_STOPPED)
@@ -127,33 +181,32 @@ void motion_plan_move(float x1_mm, float a1_deg, float x_feedrate_mm_s, float a_
     printf("MOTION PLAN WHILE NOT IDLE - ESTOP");
     intercore_command(CMD_ESTOP, &response);
   }
+}
 
-  printf("Plan move to X %2.3f mm, A %2.3f deg at %2.3f mm/s, %2.3f deg/s max \n", x1_mm, a1_deg, x_feedrate_mm_s, a_feedrate_deg_s);
+/* Motion Planner */
+static void motion_plan_rates(uint32_t x_steps, uint32_t a_steps) {
+  motion_planner_lockout();
 
-  // Determine end position in native units
-  int32_t x1_pos = round(x1_mm / (float)X_MM_PER_STEP);
-  int32_t a1_pos = round(a1_deg / (float)A_DEG_PER_STEP);
-
-  // Determine motor directions
-  x_forward = x1_pos >= response.x_pos;
-  a_forward = a1_pos >= response.a_pos;
-
-  // Determine step count for move
-  int32_t x_steps = abs(x1_pos - response.x_pos);
-  int32_t a_steps = abs(a1_pos - response.a_pos);
+  printf("Motion plan rates %d X steps x %d A steps\n", x_steps, a_steps);
 
   // Determine which stepper leads and which follows
   x_leads = x_steps > a_steps;
 
   // Apply velocity limits
-  if(x_feedrate_mm_s > X_MAX_VELO_MM_S) x_feedrate_mm_s = X_MAX_VELO_MM_S;
-  if(a_feedrate_deg_s > A_MAX_VELO_DEG_S) a_feedrate_deg_s = A_MAX_VELO_DEG_S;
+  float x_feedrate_mm_s = X_MAX_VELO_MM_S;
+  float a_feedrate_deg_s = A_MAX_VELO_DEG_S;
+
+  float x_mm = x_steps * X_MM_PER_STEP;
+  float a_deg = a_steps * A_DEG_PER_STEP;
 
   // Relate feedrates and limit one of them
-  float a_feedrate__x_steps = a_feedrate_deg_s * (float)x_steps;
-  float x_feedrate__a_steps = x_feedrate_mm_s * (float)a_steps;
-  if(a_feedrate__x_steps > x_feedrate__a_steps) a_feedrate_deg_s = x_feedrate__a_steps / (float)x_steps;
-  else if(x_feedrate__a_steps > a_feedrate__x_steps) x_feedrate_mm_s = a_feedrate__x_steps / (float)a_steps;
+  float a_feedrate__x_mm = a_feedrate_deg_s * (float)x_mm;
+  float x_feedrate__a_deg = x_feedrate_mm_s * (float)a_deg;
+  if(a_feedrate__x_mm > x_feedrate__a_deg) a_feedrate_deg_s = x_feedrate__a_deg / (float)x_mm;
+  else if(x_feedrate__a_deg > a_feedrate__x_mm) x_feedrate_mm_s = a_feedrate__x_mm / (float)a_deg;
+
+  printf("Feedrate limits\n  A %2.3f deg/s (%2.3f)\n", a_feedrate_deg_s, A_MAX_VELO_DEG_S);
+  printf("  X %2.3f mm/s (%2.3f)\n", x_feedrate_mm_s, X_MAX_VELO_MM_S);
 
   // Calculate acceleration time per axis and take largest
   float x_accel_time_s = x_feedrate_mm_s / X_MAX_ACCEL_MM_S2;
@@ -170,36 +223,11 @@ void motion_plan_move(float x1_mm, float a1_deg, float x_feedrate_mm_s, float a_
     follower_rate = round((float)FOLLOWER_UNIT * (float)x_steps / (float)a_steps);
     steps_left = a_steps;
   }
-
-  intercore_command(CMD_RUN, &response);
 }
-
-/* Threaded */
-void motion_spiral_move_x(float x1_mm, float t_pitch_mm, float t_degrees) {
-  float x0_mm, a0_deg;
-  motion_get_position(&x0_mm, &a0_deg);
-
-  float a1_deg = (t_degrees / t_pitch_mm) * (x1_mm - x0_mm);
-
-  motion_plan_move(x1_mm, a1_deg, 1000000, 1000000);
-}
-
-/* Motion core main */
-void motion_main() {
-  while(true) {
-    if(status == STATUS_RUN) move();
-    else {
-      sleep_ms(IDLE_LOOP_MS);
-      handle_commands();
-    }
-  }
-}
-
-/* Internal functions */
 
 /* Acceleration table computation */
 static void plan_accel_table(float accel_time_s, float lead_step_unit, float lead_feedrate_unit_s) {
-  printf("Plan acceleration over %2.3f with step size %2.3f u/step %2.3f u/s\n", accel_time_s, lead_step_unit, lead_feedrate_unit_s);
+  printf("Plan acceleration over %2.3fs with step size %2.3f u/step %2.3f u/s\n", accel_time_s, lead_step_unit, lead_feedrate_unit_s);
 
   float accel_unit_s2 = lead_feedrate_unit_s / accel_time_s;
   float accel_disp_units = 0.5f * accel_unit_s2 * accel_time_s * accel_time_s;
@@ -295,7 +323,7 @@ static void move() {
 
 /* Do a motion step */
 static void step() {
-  --steps_left;
+  // --steps_left; FIXME: BODGE
 
   follower_counter += follower_rate;
   bool follower_pulse = (follower_counter > FOLLOWER_UNIT);
