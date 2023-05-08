@@ -19,7 +19,7 @@ static void test_wait_motion() {
 		motion_dump_status();
 		float x, a;
 		motion_get_position(&x, &a);
-		updateRPM((int)(x * 10.0f));
+		updateRPM((int)round(x * 10.0f));
 		updatePitch((int)a);
 		printDisplay();
 	};
