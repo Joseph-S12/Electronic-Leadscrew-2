@@ -44,8 +44,8 @@ static void plan_accel_table(float accel_time_s, float lead_step_unit, float lea
 /* Entry points */
 
 /* For debugging */
-void motion_dump_status() {
-  printf("motion_dump_status()\n");
+void motion_dump_constants() {
+  printf("Motion constants\n");
   printf("  X motion parameters:\t");
   printf(
     "X_ADVANCE_MM=%2.3f X_STEPS=%d X_MICROSTEPS=%d X_RATIO=%1.3f ",
@@ -59,16 +59,20 @@ void motion_dump_status() {
     (int)A_STEPS, (int)A_MICROSTEPS, (float)A_RATIO
   );
   printf("A_DEG_PER_STEP=%f\n", (float)A_DEG_PER_STEP);
+}
 
-  printf("  Acceleration table (%d entries in us):\t", (int)accel_delays_size);
-  // for(int i = 0; i < accel_delays_size; ++i)
-  //   printf("%d ", (int)accel_delays[i]);
-  printf("...%d\n", accel_delays[accel_delays_size - 1]);
+void motion_dump_status() {
+  printf("Motion status\n");
 
   printf("  Current position (microsteps): X=%d A=%d\t", (int)x_pos, (int)a_pos);
   float x, a;
   motion_get_position(&x, &a);
   printf("X=%1.3f mm; A=%1.3f deg\n", x, a);
+
+  printf("  Acceleration table (%d entries in us):\t", (int)accel_delays_size);
+  // for(int i = 0; i < accel_delays_size; ++i)
+  //   printf("%d ", (int)accel_delays[i]);
+  printf("...%d\n", accel_delays[accel_delays_size - 1]);
 
   printf(
     "  Status: %s\t%s Leading\tX %s\tA %s",

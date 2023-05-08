@@ -30,6 +30,8 @@ void main() {
 	sleep_ms(500);
 
 	while(true) {
+		motion_dump_constants();
+		
 		printf("Move to X50 A0\n");
 		motion_plan_move(50.0f, 0.0f, 10.0f, 1.0f);
 		motion_dump_status();
