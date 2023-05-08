@@ -70,9 +70,8 @@ void motion_dump_status() {
   printf("X=%1.3f mm; A=%1.3f deg\n", x, a);
 
   printf("  Acceleration table (%d entries in us):\t", (int)accel_delays_size);
-  // for(int i = 0; i < accel_delays_size; ++i)
-  //   printf("%d ", (int)accel_delays[i]);
-  printf("...%d\n", accel_delays[accel_delays_size - 1]);
+  for(int i = 0; i < accel_delays_size; ++i)
+    printf("%5d%c", (int)accel_delays[i], (i % 20) ? ' ' : '\n');
 
   printf(
     "  Status: %s\t%s Leading\tX %s\tA %s",
@@ -227,7 +226,7 @@ static void move() {
 
   while(steps_left > 0) {
 #ifdef MOTION_DEBUG
-    printf("n=%d i=%d\t", steps_left, accel_index);
+    printf("n=%6d i=%4d T=%5d\t", steps_left, accel_index, accel_delays[accel_index]);
     if(!(steps_left & 0x7)) printf("\n");
 #endif
     step();
