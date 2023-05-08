@@ -61,7 +61,7 @@ void main() {
 	test_wait_motion();
 
 	printf("Move to X50 A360\n");
-	motion_plan_move(50.0f, 360.0f, 1.0f, 360.0f);
+	motion_plan_move(30.0f, 360.0f, 1.0f, 360.0f);
 	test_wait_motion();
 
 	printf("Move to X0 A0\n");
