@@ -2,6 +2,8 @@
 #include "hardware.h"
 #include "gpio.h"
 
+switches_t gpio_switches;
+
 inline static void output_pin(int pin) {
 	gpio_init(pin);
 	gpio_set_dir(pin, GPIO_OUT);
@@ -13,7 +15,7 @@ inline static void input_pin(int pin) {
 	gpio_pull_down(pin);
 }
 
-void initGPIO0(){
+void gpio_initialise(){
 	//Set up all the switch pins
 	//Actually moves things
 	input_pin(FORWARD_PIN);
@@ -46,28 +48,15 @@ void initGPIO0(){
 	output_pin(LED_PIN);
 }
 
-int getMode(){
-	//0 = Off
-	//1 = mm pitch
-	//2 = TPI
-	//4 = Dividing Head Mode
-	//8 =
-	//16 = invert direction
-	//32 = is moving
-
-	int status = 0;
-
-	if (gpio_get(LEADSCREW_PIN)){
-		if (gpio_get(METRIC_PIN)) 			status+=1;
-		else if (gpio_get(IMPERIAL_PIN))	status+=2;
-		if (gpio_get(RIGHT_HAND_PIN)
-			&& gpio_get(REVERSE_PIN))		status+=16;
-		else if (gpio_get(LEFT_HAND_PIN)
-			&& !(gpio_get(REVERSE_PIN)))	status+=16;
-	}
-	else if (gpio_get(DIVIDING_PIN)){
-		status+=4;
-	}
-
-	return status;
+void gpio_read_switches() {
+	gpio_switches.forward = gpio_get(FORWARD_PIN);
+	gpio_switches.reverse = gpio_get(REVERSE_PIN);
+	gpio_switches.metric = gpio_get(METRIC_PIN);
+	gpio_switches.imperial = gpio_get(IMPERIAL_PIN);
+	gpio_switches.leadscrew = gpio_get(LEADSCREW_PIN);
+	gpio_switches.dividing = gpio_get(DIVIDING_PIN);
+	gpio_switches.increase = gpio_get(INCREASE_PIN);
+	gpio_switches.decrease = gpio_get(DECREASE_PIN);
+	gpio_switches.rhand = gpio_get(RIGHT_HAND_PIN);
+	gpio_switches.lhand = gpio_get(LEFT_HAND_PIN);
 }

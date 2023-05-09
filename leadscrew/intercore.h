@@ -24,6 +24,8 @@ typedef struct {
 #define STATUS_ESTOPPED -1
 
 void intercore_init();
-void intercore_command(int8_t cmd, response_t *response);
+void intercore_command(int8_t cmd);
 bool intercore_getcommand_nb(command_t *command);
 void intercore_respond_nb(response_t *response);
+
+extern response_t intercore_response;

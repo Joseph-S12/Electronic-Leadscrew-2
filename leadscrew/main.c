@@ -5,34 +5,13 @@
 #include "pico/bootrom.h"
 #include "stdio.h"
 #include "stdint.h"
+#include "math.h"
 
 #include "main.h"
 #include "gpio.h"
 #include "display.h"
 #include "motion.h"
 #include "intercore.h"
-
-static void display_loop() {
-	// motion_dump_status();
-	float x, a;
-	motion_get_position(&x, &a);
-	gpio_flash_led(333, 166);
-	updateRPM((int)round(x * 10.0f));
-	updatePitch((int)a);
-	printDisplay();
-}
-
-static void test_wait_motion() {
-	for(int i=0; i<5; ++i) display_loop();
-
-	printf("Stop motion\n");
-	motion_stop();
-
-	while(!motion_complete()) display_loop();
-
-	motion_dump_status();
-	sleep_ms(500);
-}
 
 //This is the initialisation code for core 0. Everything on this core after initialisation is interrupt driven and deals with the quadrature encoder and driving the stepper.
 //It is interrupted by the quadrature encoder pulses.
@@ -45,7 +24,7 @@ void main() {
 	stdio_init_all();
 
 	printf("Initialising GPIO\n");
-	initGPIO0();
+	gpio_initialise();
 	printf("Initialising Queues\n");
 	intercore_init();
 	printf("Initialising Display\n");
@@ -58,116 +37,82 @@ void main() {
 
 	gpio_flash_led(500, 500);
 
-	printf("2mm pitch RH metric thread (forwards)\n");
-	motion_plan_thread_metric(2.0f);
-	motion_plan_direction(true, false);
-	motion_run();
-	test_wait_motion();
+	float this_a, last_a = 0.0f;
+	bool forward = true;
 
-	printf("12TPI LH imperial thread (backwards)\n");
-	motion_plan_thread_imperial(12.0f);
-	motion_plan_direction(false, true);
-	motion_run();
-	test_wait_motion();
+	int pitch_mm_100 = 100;
+	int pitch_tpi_10 = 80;
+	while(true) {
+		sleep_ms(100);
 
-	printf("40TPI LH imperial thread (backwards)\n");
-	motion_plan_thread_imperial(40.0f);
-	motion_plan_direction(false, true);
-	motion_run();
-	test_wait_motion();
+		gpio_read_switches();
+		motion_update_status();
 
-	printf("End of program\n");
-	gpio_flash_led(1000, 0);
+		last_a = this_a;
+		motion_get_position(0, &this_a);
 
-	reset_usb_boot(0, 0);
+		uint8_t led_status = 0;
+		switch(intercore_response.status) {
+		case STATUS_RUN:
+			led_status |= 4;
+			if(!(forward ? gpio_switches.forward : gpio_switches.reverse))
+				motion_stop();
+			break;
 
-	/* TODO */
-	// Infinite loop
-	// Read the switch inputs
-	// Get motion status
-	// When RUNNING
-	//   Check if F/R switch released
-	//     Call motion stop
-	// When STOPPED
-	//   Check forward / reverse and status = STOPPED
-	//     Read LH/RH switch
-	//     Call motion plan direction indicate F/B L/R
-	//     Call motion run
-	//   Otherwise
-	//     Check metric / imperial switch
-	//       Swap out and display current value
-	//     Read UP / DOWN
-	//       Adjust TPI or mm pitch
+		case STATUS_STOPPED:
+			led_status |= 1;
+			if(gpio_switches.forward || gpio_switches.reverse) {
+				forward = gpio_switches.forward;
+				if(!forward) led_status |= 64;
+				if(gpio_switches.lhand) {
+					led_status |= 32;
+					motion_plan_direction(forward, true);
+					motion_run();
+				} else if(gpio_switches.rhand) {
+					motion_plan_direction(forward, false);
+					motion_run();
+				}
+			} else {
+				if(gpio_switches.metric) {
+					led_status |= 16;
+					if(gpio_switches.increase) pitch_mm_100 += 5;
+					if(gpio_switches.decrease) pitch_mm_100 -= 5;
+					if(pitch_mm_100 < 20) pitch_mm_100 = 20;
+					if(pitch_mm_100 > 2500) pitch_mm_100 = 2500;
 
+					motion_plan_thread_metric((float)pitch_mm_100 / 100.0f);
+					updatePitch(pitch_mm_100, 2);
+				} else if(gpio_switches.imperial) {
+					led_status |= 8;
 
-	// initialiseLeadscrew();
-	// multicore_launch_core1(&core_1_main);
-	//
-	// while (true){
-	//
-	// 	state=getMode();
-	// 	//Check Input switch states
-	// 	if (gpio_get(LEADSCREW_PIN)){
-	// 		updatePitch(getPitch());
-	// 		updateRPM(rpm);//Will need speed control here eventually
-	//
-	// 		if (gpio_get(FORWARD_PIN) || gpio_get(REVERSE_PIN)){
-	// 			//Move
-	// 			state+=32;
-	// 			setSpindleDir(gpio_get(REVERSE_PIN));
-	// 			moveSpindle(rpm);
-	// 			// doSpindleSteps(1);
-	// 			// sleep_us(300);
-	// 			doLeadscrewPulse();
-	// 		}
-	// 		else {
-	// 			resetCounters();
-	// 			if (gpio_get(METRIC_PIN) || gpio_get(IMPERIAL_PIN)){
-	// 				if (gpio_get(INCREASE_PIN)){
-	// 					if (pitch_1000<2500) pitch_1000+=50;
-	// 					while (gpio_get(INCREASE_PIN)) sleep_ms(5);
-	// 				}
-	// 				if (gpio_get(DECREASE_PIN)){
-	// 					if (pitch_1000>50) rpm-=50;
-	// 					while (gpio_get(DECREASE_PIN)) sleep_ms(5);
-	// 				}
-	// 			}
-	// 			else{
-	// 				if (gpio_get(INCREASE_PIN)){
-	// 					if (rpm<1000) rpm+=50;
-	// 					while (gpio_get(INCREASE_PIN)) sleep_ms(5);
-	// 				}
-	// 				if (gpio_get(DECREASE_PIN)){
-	// 					if (rpm>50) rpm-=50;
-	// 					while (gpio_get(DECREASE_PIN)) sleep_ms(5);
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// 	else if (gpio_get(DIVIDING_PIN)){
-	// 		updatePitch(1000);
-	// 		updateRPM(noDivisions);//This is Number of divisions
-	// 		if (gpio_get(FORWARD_PIN)){
-	// 			divisionCount++;
-	// 			indexSpindle(noDivisions, divisionCount);
-	// 			sleep_ms(10);
-	// 			while (gpio_get(FORWARD_PIN)) sleep_ms(5);
-	// 		}
-	// 		else if (gpio_get(REVERSE_PIN)){
-	// 			divisionCount--;
-	// 			indexSpindle(noDivisions, divisionCount);
-	// 			sleep_ms(10);
-	// 			while (gpio_get(REVERSE_PIN)) sleep_ms(5);
-	// 		}
-	// 	}
-	// 	else{
-	// 		resetCounters();
-	// 		updatePitch(0000);
-	// 		updateRPM(0000);
-	// 	}
-	// 	updateStatus(state);
-	//
-	// }
+					if(gpio_switches.increase) pitch_tpi_10 += 5;
+					if(gpio_switches.decrease) pitch_tpi_10 -= 5;
+					if(pitch_tpi_10 < 10) pitch_tpi_10 = 10;
+					if(pitch_tpi_10 > 800) pitch_tpi_10 = 800;
+
+					motion_plan_thread_imperial((float)pitch_tpi_10 / 10.0f);
+					updatePitch(pitch_tpi_10, 1);
+				}
+			}
+			break;
+
+		case STATUS_STOPPING:
+			led_status |= 2;
+			if((forward ? gpio_switches.forward : gpio_switches.reverse))
+				motion_run();
+			break;
+
+		case STATUS_ESTOPPED:
+			led_status |= 7;
+			updatePitch(-1, -1);
+			updateRPM(-1, -1);
+		  break;
+		}
+
+		updateStatus(led_status);
+		updateRPM(60.0f / 360.0f * (this_a > last_a) ? (this_a - last_a) : (last_a - this_a), 0);
+		printDisplay();
+	}
 }
 
 void core_1_main(){

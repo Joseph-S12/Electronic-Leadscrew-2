@@ -23,8 +23,8 @@
 #define DISPLAY_STB_PIN 20   	//Output, Pin 26
 #endif
 
-extern void initGPIO0();
-extern int getMode();
+void gpio_initialise();
+void gpio_read_switches();
 
 inline static void gpio_flash_led(int on, int off) {
   gpio_put(LED_PIN, true);
@@ -32,3 +32,22 @@ inline static void gpio_flash_led(int on, int off) {
   gpio_put(LED_PIN, false);
   sleep_ms(off);
 }
+
+typedef struct {
+  uint8_t forward : 1;
+  uint8_t reverse : 1;
+
+  uint8_t metric : 1;
+  uint8_t imperial : 1;
+
+  uint8_t leadscrew : 1;
+  uint8_t dividing : 1;
+
+  uint8_t increase : 1;
+  uint8_t decrease : 1;
+
+  uint8_t rhand : 1;
+  uint8_t lhand : 1;
+} switches_t;
+
+extern switches_t gpio_switches;

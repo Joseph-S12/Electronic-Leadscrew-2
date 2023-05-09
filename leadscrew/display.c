@@ -5,8 +5,8 @@
 bool indicatorLEDs[8];
 uint8_t rpm_display[4];
 uint8_t pitch_display[4];
-uint8_t rpm_decimal = 1;
-uint8_t pitch_decimal = 3;
+int8_t rpm_decimal = 0;
+int8_t pitch_decimal = 0;
 
 //This is a table of which LEDs to activate, depending upon the digit that needs displaying
 const uint8_t number[] = {
@@ -87,8 +87,8 @@ void initialiseDisplay() {
   //Flashes the LED
   gpio_flash_led(500, 500);
 
-  updateRPM(0000);
-  updatePitch(1500);
+  updateRPM(-1, -1);
+  updatePitch(-1, -1);
   printDisplay();
 }
 
@@ -128,12 +128,14 @@ void update_display(uint8_t display[], uint16_t number) {
   display[0] = number;
 }
 
-void updateRPM(uint16_t rpm_int) {
+void updateRPM(uint16_t rpm_int, int decimal_position) {
   update_display(rpm_display, rpm_int);
+  rpm_decimal = decimal_position;
 }
 
-void updatePitch(uint16_t pitch_int) {
+void updatePitch(uint16_t pitch_int, int decimal_position) {
   update_display(pitch_display, pitch_int);
+  pitch_decimal = decimal_position;
 }
 
 void printDisplay(){
@@ -147,13 +149,13 @@ void printDisplay(){
   for (int x = 3; x >= 0; --x) {
     uint8_t decimal_indicator = (x == rpm_decimal) ? 0x80 : 0;
     display_byte(number[rpm_display[x]] | decimal_indicator);
-    display_byte(indicatorLEDs[x] ? 0xff : 0x00);
+    display_byte(indicatorLEDs[x + 4] ? 0xff : 0x00);
   }
   //Set pitch digits
   for (int x = 3; x >= 0; --x) {
     uint8_t decimal_indicator = (x == pitch_decimal) ? 0x80 : 0;
     display_byte(number[pitch_display[x]] | decimal_indicator);
-    display_byte(indicatorLEDs[x + 4] ? 0xff : 0x00);
+    display_byte(indicatorLEDs[x] ? 0xff : 0x00);
   }
 
   display_end();

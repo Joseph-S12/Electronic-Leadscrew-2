@@ -67,14 +67,18 @@ void motion_dump_constants() {
 void motion_dump_status() {
   printf("Motion status\n");
 
-  response_t response;
-  intercore_command(CMD_Q_STATUS, &response);
+  intercore_command(CMD_Q_STATUS);
 
-  printf("  Current position (microsteps): X=%d A=%d\t", (int)response.x_pos, (int)response.a_pos);
+  printf(
+    "  Current position (microsteps): X=%d A=%d\t",
+    (int)intercore_response.x_pos,
+    (int)intercore_response.a_pos
+  );
+
   printf(
     "X=%1.3f mm; A=%1.3f deg\n",
-    (float)response.x_pos * X_MM_PER_STEP,
-    (float)response.a_pos * A_DEG_PER_STEP
+    (float)intercore_response.x_pos * X_MM_PER_STEP,
+    (float)intercore_response.a_pos * A_DEG_PER_STEP
   );
 
   printf("  Acceleration table (%d entries in us):\t", (int)accel_delays_size);
@@ -87,7 +91,7 @@ void motion_dump_status() {
   printf("\n");
 
   const char *status_str;
-  switch(response.status) {
+  switch(intercore_response.status) {
     case STATUS_STOPPED: status_str = "STOPPED"; break;
     case STATUS_RUN: status_str = "RUNNING"; break;
     case STATUS_STOPPING: status_str = "STOPPING"; break;
@@ -100,24 +104,22 @@ void motion_dump_status() {
     x_forward ? "Forward" : "Reverse", a_forward ? "Forward" : "Reverse"
   );
 
-  printf("  Steps left:\t%d\n", response.steps_left);
+  printf("  Steps left:\t%d\n", intercore_response.steps_left);
   printf("  Follower rate=%d\n", follower_rate);
+}
+
+void motion_update_status() {
+  intercore_command(CMD_Q_STATUS);
 }
 
 /* Retrieve coordinates */
 void motion_get_position(float *x_mm, float *a_deg) {
-  response_t response;
-  intercore_command(CMD_Q_STATUS, &response);
-
-  if(x_mm) *x_mm = (float)response.x_pos * (float)X_MM_PER_STEP;
-  if(a_deg) *a_deg = (float)response.a_pos * (float)A_DEG_PER_STEP;
+  if(x_mm) *x_mm = (float)intercore_response.x_pos * (float)X_MM_PER_STEP;
+  if(a_deg) *a_deg = (float)intercore_response.a_pos * (float)A_DEG_PER_STEP;
 }
 
 bool motion_complete() {
-  response_t response;
-  intercore_command(CMD_Q_STATUS, &response);
-
-  return response.status == STATUS_STOPPED;
+  return intercore_response.status == STATUS_STOPPED;
 }
 
 void motion_plan_thread_metric(float pitch_mm) {
@@ -150,13 +152,11 @@ void motion_plan_direction(bool forward, bool lefthanded) {
 }
 
 void motion_run() {
-  response_t response;
-  intercore_command(CMD_RUN, &response);
+  intercore_command(CMD_RUN);
 }
 
 void motion_stop() {
-  response_t response;
-  intercore_command(CMD_STOP, &response);
+  intercore_command(CMD_STOP);
 }
 
 /* Motion core main */
@@ -174,12 +174,11 @@ void motion_main() {
 
 /* Lockout function */
 static void motion_planner_lockout() {
-  response_t response;
-  intercore_command(CMD_Q_STATUS, &response);
-  if(response.status != STATUS_STOPPED)
+  motion_update_status();
+  if(intercore_response.status != STATUS_STOPPED)
   {
     printf("MOTION PLAN WHILE NOT IDLE - ESTOP");
-    intercore_command(CMD_ESTOP, &response);
+    intercore_command(CMD_ESTOP);
   }
 }
 
