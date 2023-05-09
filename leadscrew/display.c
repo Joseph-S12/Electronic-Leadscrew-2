@@ -26,12 +26,12 @@ const uint8_t number[] = {
 
 static void display_begin() {
   gpio_put(DISPLAY_STB_PIN, 0);
-  sleep_us(100);
+  sleep_us(10);
 }
 
 static void display_end() {
   gpio_put(DISPLAY_STB_PIN, 1);
-  sleep_us(100);
+  sleep_us(10);
 }
 
 static void display_byte(uint8_t byte) {
@@ -39,9 +39,9 @@ static void display_byte(uint8_t byte) {
     gpio_put(DISPLAY_SIO_PIN, byte & 1);
     byte >>= 1;
     gpio_put(DISPLAY_CLK_PIN, 0);
-    sleep_us(100);
+    sleep_us(10);
     gpio_put(DISPLAY_CLK_PIN, 1);
-    sleep_us(100);
+    sleep_us(10);
   }
 }
 
