@@ -27,10 +27,10 @@ static int32_t x_pos, a_pos;
 
 static int status = STATUS_STOPPED;
 
-#define FOLLOWER_UNIT 1000000000
 static bool x_leads = false;
 static int32_t follower_rate = 0;
 static int32_t follower_counter = 0;
+static int32_t follower_limit = 0;
 
 static bool x_forward = true, a_forward = true;
 
@@ -105,7 +105,7 @@ void motion_dump_status() {
   );
 
   printf("  Steps left:\t%d\n", intercore_response.steps_left);
-  printf("  Follower rate=%d\n", follower_rate);
+  printf("  Follower rate=%d / %d\n", follower_rate, follower_limit);
 }
 
 void motion_update_status() {
@@ -215,11 +215,13 @@ static void motion_plan_rates(uint32_t x_steps, uint32_t a_steps) {
   // Determine the number of lead steps required to accelerate and follower rate
   if(x_leads) {
     plan_accel_table(accel_time_s, X_MM_PER_STEP, x_feedrate_mm_s);
-    follower_rate = round((float)FOLLOWER_UNIT * (float)a_steps / (float)x_steps);
+    follower_rate = a_steps;
+    follower_limit = x_steps;
     steps_left = x_steps;
   } else {
     plan_accel_table(accel_time_s, A_DEG_PER_STEP, a_feedrate_deg_s);
-    follower_rate = round((float)FOLLOWER_UNIT * (float)x_steps / (float)a_steps);
+    follower_rate = x_steps;
+    follower_limit = a_steps;
     steps_left = a_steps;
   }
 }
@@ -278,7 +280,7 @@ static inline void a_direction(bool forward) {
 
 static void move() {
   int accel_index = 0;
-  follower_counter = FOLLOWER_UNIT / 2;
+  follower_counter = follower_limit / 2;
 
   /* Enable motors */
   motor_en(true);
@@ -325,8 +327,8 @@ static void step() {
   // --steps_left; FIXME: BODGE
 
   follower_counter += follower_rate;
-  bool follower_pulse = (follower_counter > FOLLOWER_UNIT);
-  if(follower_pulse) follower_counter -= FOLLOWER_UNIT;
+  bool follower_pulse = (follower_counter > follower_limit);
+  if(follower_pulse) follower_counter -= follower_limit;
 
   if(x_leads) {
     x_pulse(true);
