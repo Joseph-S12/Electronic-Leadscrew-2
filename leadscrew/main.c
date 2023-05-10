@@ -131,10 +131,3 @@ void main() {
 		printDisplay();
 	}
 }
-
-void core_1_main(){
-	while (true){
-		sleep_ms(500);
-		printDisplay();
-	}
-}
