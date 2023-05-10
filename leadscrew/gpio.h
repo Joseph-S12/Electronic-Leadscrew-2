@@ -1,5 +1,23 @@
 #include "pico/stdlib.h"
 
+// TODO
+// Switch arrangement
+// Run:
+// FORWARD < SET-UP > REVERSE
+
+// Mode selection:
+// THREAD L < NEXT > THREAD R
+// LINEAR  < DIVIDE > POWERFEED
+
+// Parameter selection:
+// IMPERIAL < RATE > METRIC
+
+// Parameter change:
+// INCREMENT < -- > DECREMENT
+
+// LED Indication (mode / param):
+// LH RH LIN PWR DIV
+//               CNT IMP RAT MET
 
 #ifndef FORWARD_PIN
 #define FORWARD_PIN 0   		//Input, Pin 0
